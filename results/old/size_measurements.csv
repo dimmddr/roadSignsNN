@@ -1,0 +1,4 @@
+"","training_size","accuracy","learning_speed","user_time","sys_time","elapsed_time"
+"user.self",5,0.103809523809524,1,410.2,9.64,3110.1
+"user.self1",10,0.0994285714285714,1,415.87,9.64,3115.78
+"user.self2",15,0.0980952380952381,1,422.07,9.64,3121.98
