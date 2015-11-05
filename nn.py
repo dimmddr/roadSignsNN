@@ -61,20 +61,20 @@ def learning(x_in, lbl_in):
         y_in = res['y_in']
         z = res['z']
         z_in = res['z_in']
-        
+
         # back, compute error for output
         sigma2 = (t - y) * d_sigmoid(y_in)
-        d_theta2 = sigma2 * z[:, None] * alfa
+        d_theta2 = z[:, None] * sigma2 * alfa
         
         sigma_in = np.dot(theta2.T, sigma2)
         sigma1 = sigma_in[1:] * d_sigmoid(z_in)
-        d_theta1 = sigma1 * x[:, None] * alfa
-        theta1 = theta1 + d_theta1
-        theta2 = theta2 + d_theta2
+        d_theta1 = x[:, None] * sigma1 * alfa
+        theta1 = theta1 + d_theta1.T
+        theta2 = theta2 + d_theta2.T
 
 
 def predict(x_in):
     x = np.array(x_in) / MAX_INPUT
     x = np.insert(x, 0, 1)
     res = forward(x)['y']
-    return res.index(max(res))
+    return np.argmax(res)

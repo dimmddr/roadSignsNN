@@ -12,7 +12,8 @@ def test_init(seed = 16):
     global train_set_complete
     global test_set
     global lbl_test
-    train = np.loadtxt('train.csv', delimiter=',', skiprows=1, dtype=int)
+    train = np.loadtxt('small_train.csv', delimiter=',', skiprows=1, dtype=int)
+    # train = np.loadtxt('train.csv', delimiter=',', skiprows=1, dtype=int)
     np.random.seed(seed)
     l = len(train)
     train_ind = np.random.choice(range(l), replace = False, size = np.floor(l * 0.75))
@@ -21,10 +22,12 @@ def test_init(seed = 16):
     test_set = train[test_ind, :]
     lbl_test = test_set[:, 0]
     test_set = np.delete(test_set, 0, 1)
-    lbl_test[lbl_test == 0] = 10
 
 
 def write_results(result: list, test_name):
+    if 0 == len(result):
+        print("No results to write.")
+        return
     # Maybe I need to make it into start of file for easy tuning
     wd = os.getcwd()
     result_folder = wd + "\\results"
@@ -44,13 +47,15 @@ def write_results(result: list, test_name):
     except OSError as e:
         print("Can't create folder, because of this: " + str(e))
         return
-    os.chdir(test_path)
-    with open(name + ".csv", "wb") as outcsv:
-        writer = csv.DictWriter(outcsv, fieldnames= result[0].keys())
-        writer.writeheader()
-        for res in result:
-            writer.writerow(res)
-    os.chdir(wd)
+    try:
+        with open(name + ".csv", "w") as outcsv:
+            fieldnames = ['training_size', 'accuracy', 'learning_speed', 'hidden_layer_size', 'time']
+            writer = csv.DictWriter(outcsv, fieldnames=fieldnames)
+            writer.writeheader()
+            for res in result:
+                writer.writerow(res)
+    finally:
+        os.chdir(wd)
 
 
 # test for train set size
@@ -70,10 +75,11 @@ def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
         
         lbl_train = train_set[:, 0]
         train_set = train_set[:, 1:]
-        lbl_train[lbl_train == 0] = 10
-        
+
         print("Learn")
-        m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
+        # m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
+        nn.learning(x_in=train_set, lbl_in=lbl_train)
+        m_time = 0
         print("Predict")
         predict_res = []
         for test in test_set:
@@ -109,7 +115,6 @@ def test_hidden_layer_size(min_size=15, max_size=50, step_size=5, init=False):
 
         lbl_train = train_set[:, 0]
         train_set = train_set[:, 1:]
-        lbl_train[lbl_train == 0] = 10
 
         print("Learn")
         m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
@@ -149,7 +154,6 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
 
         lbl_train = train_set[:, 0]
         train_set = train_set[:, 1:]
-        lbl_train[lbl_train == 0] = 10
 
         print("Learn")
         m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
