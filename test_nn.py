@@ -73,7 +73,7 @@ def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
         lbl_train[lbl_train == 0] = 10
         
         print("Learn")
-        m_time = timeit.timeit(nn.learning(x = train_set, lbl = lbl_train))
+        m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
         print("Predict")
         predict_res = []
         for test in test_set:
@@ -112,7 +112,7 @@ def test_hidden_layer_size(min_size=15, max_size=50, step_size=5, init=False):
         lbl_train[lbl_train == 0] = 10
 
         print("Learn")
-        m_time = timeit.timeit(nn.learning(x=train_set, lbl=lbl_train))
+        m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
         print("Predict")
         predict_res = []
         for test in test_set:
@@ -152,7 +152,7 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
         lbl_train[lbl_train == 0] = 10
 
         print("Learn")
-        m_time = timeit.timeit(nn.learning(x=train_set, lbl=lbl_train))
+        m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
         print("Predict")
         predict_res = []
         for test in test_set:
