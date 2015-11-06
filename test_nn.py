@@ -12,8 +12,8 @@ def test_init(seed = 16):
     global train_set_complete
     global test_set
     global lbl_test
-    train = np.loadtxt('small_train.csv', delimiter=',', skiprows=1, dtype=int)
-    # train = np.loadtxt('train.csv', delimiter=',', skiprows=1, dtype=int)
+    # train = np.loadtxt('small_train.csv', delimiter=',', skiprows=1, dtype=int)
+    train = np.loadtxt('train.csv', delimiter=',', skiprows=1, dtype=int)
     np.random.seed(seed)
     l = len(train)
     train_ind = np.random.choice(range(l), replace = False, size = np.floor(l * 0.75))
@@ -77,9 +77,8 @@ def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
         train_set = train_set[:, 1:]
 
         print("Learn")
-        # m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
-        nn.learning(x_in=train_set, lbl_in=lbl_train)
-        m_time = 0
+        m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
+        # nn.learning(x_in=train_set, lbl_in=lbl_train)
         print("Predict")
         predict_res = []
         for test in test_set:
@@ -117,7 +116,7 @@ def test_hidden_layer_size(min_size=15, max_size=50, step_size=5, init=False):
         train_set = train_set[:, 1:]
 
         print("Learn")
-        m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
+        m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
         print("Predict")
         predict_res = []
         for test in test_set:
@@ -143,7 +142,7 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
         test_init()
 
     res = []
-    for alf in range(min_speed, max_speed, step_size):
+    for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         ind = 3500
         alfa = alf
@@ -156,7 +155,7 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
         train_set = train_set[:, 1:]
 
         print("Learn")
-        m_time = timeit.timeit(nn.learning(x_in=train_set, lbl_in=lbl_train))
+        m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
         print("Predict")
         predict_res = []
         for test in test_set:
@@ -177,8 +176,8 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
 
 def test_all():
     print("Test learning size")
-    test_learning_size(500, 7000, 500)
+    test_learning_size(3500, 7000, 500)
     print("Test hidden layer size")
-    test_hidden_layer_size(15, 50, 5)
+    test_hidden_layer_size(25, 50, 5, init=True)
     print("Test learning speed")
-    test_learning_speed(0.1, 3, 0.1)
+    test_learning_speed(0.5, 3, 0.5, init=True)
