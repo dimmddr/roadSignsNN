@@ -10,7 +10,7 @@ theta1 = (np.random.random((hidden_layer_size, input_layer_size + 1)) - 0.5) / 1
 theta2 = (np.random.random((output_layer_size, hidden_layer_size + 1)) - 0.5) / 10
 
 
-def init(input_size = 28 * 28, hidden_size = 15, output_size = 10, alfa_ = 1, seed = 16):
+def init(input_size=28 * 28, hidden_size=15, output_size=10, alfa_=1, seed=16):
     global input_layer_size
     global hidden_layer_size
     global output_layer_size
@@ -65,7 +65,7 @@ def learning(x_in, lbl_in):
         # back, compute error for output
         sigma2 = (t - y) * d_sigmoid(y_in)
         d_theta2 = z[:, None] * sigma2 * alfa
-        
+
         sigma_in = np.dot(theta2.T, sigma2)
         sigma1 = sigma_in[1:] * d_sigmoid(z_in)
         d_theta1 = x[:, None] * sigma1 * alfa
