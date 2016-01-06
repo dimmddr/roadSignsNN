@@ -52,3 +52,19 @@ class DoubledLayer:
     # Can throw NameError
     def get_convolutional_layer_result(self):
         return self.conv_res
+
+
+class FullConectionLayer:
+    def __init__(self, input_size, output_size=2, activation_function=sigmoid, seed=16):
+        np.random.RandomState(seed)
+        self.weights = np.random.uniform(size=(output_size, input_size))
+        self.activation = activation_function
+
+    def forward(self, input_data):
+        return self.activation(np.dot(input_data, self.weights))
+
+    def get_weights(self):
+        return self.weights
+
+    def learn(self):
+        raise NotImplemented
