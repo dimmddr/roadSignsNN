@@ -4,24 +4,26 @@ import os
 import timeit
 
 import numpy as np
+import numpy.lib.recfunctions
 
 import nn
 
 
-def test_init(seed = 16):
+def test_init(seed=16):
     global train_set_complete
-    global test_set
-    global lbl_test
-    # train = np.loadtxt('small_train.csv', delimiter=',', skiprows=1, dtype=int)
-    train = np.loadtxt('train.csv', delimiter=',', skiprows=1, dtype=int)
-    np.random.seed(seed)
-    l = len(train)
-    train_ind = np.random.choice(range(l), replace = False, size = np.floor(l * 0.75))
-    train_set_complete = train[train_ind, :]
-    test_ind = np.delete(np.array(range(l)), train_ind)
-    test_set = train[test_ind, :]
-    lbl_test = test_set[:, 0]
-    test_set = np.delete(test_set, 0, 1)
+
+    dataset_path = "h:/_diplomaData/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
+    annotation_path = dataset_path + 'allAnnotations.csv'
+    negatives_path = dataset_path + "negatives.dat"
+    rnd = np.random.RandomState(seed)
+
+    # Read data from files
+    image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
+    negatives = np.genfromtxt(negatives_path, dtype=None)
+    train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
+
+    # Get random
+    np.random.shuffle(train_set_complete)
 
 
 def write_results(result: list, test_name):
@@ -63,16 +65,16 @@ def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
     # I don't want to do it multiply times, read large file is long.
     if not init:
         test_init()
-    
+
     res = []
     for ind in range(min_size, max_size, step_size):
         print(ind)
         hl = 25
         alfa = 1
-        nn.init(input_size = 28 * 28, hidden_size = hl, output_size = 10, alfa_ = alfa, seed = 123)
-        
+        nn.init(input_size=28 * 28, hidden_size=hl, output_size=10, alfa_=alfa, seed=123)
+
         train_set = train_set_complete[0:ind]
-        
+
         lbl_train = train_set[:, 0]
         train_set = train_set[:, 1:]
 
@@ -84,7 +86,7 @@ def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
         for test in test_set:
             predict_res.append(nn.predict(test))
         s = sum(predict_res == lbl_test)
-        proc_n = s/len(lbl_test)
+        proc_n = s / len(lbl_test)
         print(proc_n)
         res.append({
             'training_size': ind,
@@ -97,44 +99,6 @@ def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
     return res
 
 
-# test for hidden layer size
-def test_hidden_layer_size(min_size=15, max_size=50, step_size=5, init=False):
-    # I don't want to do it multiply times, read large file is long.
-    if not init:
-        test_init()
-
-    res = []
-    for hl in range(min_size, max_size, step_size):
-        print(hl)
-        ind = 3500
-        alfa = 1
-        nn.init(input_size=28 * 28, hidden_size=hl, output_size=10, alfa_=alfa, seed=123)
-
-        train_set = train_set_complete[0:ind]
-
-        lbl_train = train_set[:, 0]
-        train_set = train_set[:, 1:]
-
-        print("Learn")
-        m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
-        print("Predict")
-        predict_res = []
-        for test in test_set:
-            predict_res.append(nn.predict(test))
-        s = sum(predict_res == lbl_test)
-        proc_n = s / len(lbl_test)
-        print(proc_n)
-        res.append({
-            'training_size': ind,
-            'accuracy': proc_n,
-            'learning_speed': alfa,
-            'hidden_layer_size': hl,
-            'time': m_time
-        })
-    write_results(res, "hidden_layer_size_measurements")
-    return res
-
-
 # test for train speed
 def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
     # I don't want to do it multiply times, read large file is long.
@@ -142,42 +106,40 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
         test_init()
 
     res = []
+    ind = np.floor(len(train_set_complete) * 0.75)
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
-        ind = 3500
         alfa = alf
-        hl = 25
-        nn.init(input_size=28 * 28, hidden_size=hl, output_size=10, alfa_=alfa, seed=123)
-
-        train_set = train_set_complete[0:ind]
-
-        lbl_train = train_set[:, 0]
-        train_set = train_set[:, 1:]
+        nn.init(alfa_=alfa, seed=123)
+        train_set = train_set_complete['Filename'][0:ind]
+        lbl_train = (train_set_complete['Upper_left_corner_X'][0:ind],
+                     train_set_complete['Lower_right_corner_X'][0:ind],
+                     train_set_complete['Upper_left_corner_Y'][0:ind],
+                     train_set_complete['Lower_right_corner_Y'][0:ind]
+                     )
 
         print("Learn")
         m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
         print("Predict")
-        predict_res = []
-        for test in test_set:
-            predict_res.append(nn.predict(test))
-        s = sum(predict_res == lbl_test)
-        proc_n = s / len(lbl_test)
-        print(proc_n)
-        res.append({
-            'training_size': ind,
-            'accuracy': proc_n,
-            'learning_speed': alf,
-            'hidden_layer_size': hl,
-            'time': m_time
-        })
-    write_results(res, "training_speed_measurements")
+        # predict_res = []
+        # for test in test_set:
+        #     predict_res.append(nn.predict(test))
+        # s = sum(predict_res == lbl_test)
+        # proc_n = s / len(lbl_test)
+        # print(proc_n)
+        # res.append({
+        #     'training_size': ind,
+        #     'accuracy': proc_n,
+        #     'learning_speed': alf,
+        #     'hidden_layer_size': hl,
+        #     'time': m_time
+        # })
+    # write_results(res, "training_speed_measurements")
     return res
 
 
 def test_all():
     print("Test learning size")
     test_learning_size(3500, 7000, 500)
-    print("Test hidden layer size")
-    test_hidden_layer_size(25, 50, 5, init=True)
     print("Test learning speed")
     test_learning_speed(0.5, 3, 0.5, init=True)

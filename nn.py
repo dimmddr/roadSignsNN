@@ -7,7 +7,7 @@ def init(alfa_=1, seed=16):
     global first_conv
     global first_outp
     # first layer input is 12x12 window.
-    # This window will be created from 48x48 window, where only every 4th pixel matter
+    # Actually, it's 48x48 window, but I take only every 4th pixel
     # 10 filters for start, 5x5 size each
     filters_count = 10
     filter_w = filter_h = 5
