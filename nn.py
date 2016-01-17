@@ -13,11 +13,16 @@ def init(alfa_=1, seed=16):
     filter_w = filter_h = 5
     pool_size = 2
     first_conv = DoubledLayer(
+            activation_func=sigmoid,
+            activation_func_deriv=d_sigmoid,
             filters_size=(filters_count, filter_w, filter_h),
             pooling_size=pool_size,
             seed=seed)
     first_outp = FullConectionLayer(
+            activation_func=sigmoid,
+            activation_func_deriv=d_sigmoid,
             input_size=(12 - filter_w + 1) * (12 - filter_h + 1) * filters_count / pool_size ** 2,
+            output_size=1,
             seed=seed
     )
     alfa = alfa_
@@ -37,8 +42,15 @@ def forward(x):
     return first_outp.forward(t_res)
 
 
+# Here I used quadratic cost function, if I change cost function I would need to rewrite this function
+def compute_output_error(actual_answer, right_answer, z, outp_layer):
+    return (right_answer - actual_answer) * outp_layer.activation_function_derivative(z)
+
+
 def learning(x_in, lbl_in):
-    raise NotImplemented
+    res = forward(x_in)
+    sigma = compute_output_error(actual_answer=res[0], right_answer=lbl_in, z=res[1], outp_layer=first_outp)
+    first_conv.learn()
 
 
 def predict(x_in):

@@ -1,18 +1,16 @@
 import numpy as np
 
-
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-
 class DoubledLayer:
-    def __init__(self, filters_size=(10, 5, 5), activation_func=sigmoid, pooling_size=2, seed=16):
+    def __init__(self, activation_func, activation_func_deriv, filters_size=(10, 5, 5), pooling_size=2, alfa=1,
+                 seed=16):
         np.random.RandomState(seed)
         self.filters = np.random.uniform(size=filters_size)
         self.activation_function = activation_func
+        self.activation_function_derivative = activation_func_deriv
         self.pool_size = pooling_size
         self.conv_res = np.empty(shape=(0, 0, 0))
         self.pool_res = np.empty(shape=(0, 0, 0))
+        self.alfa = alfa
 
     def get_weights(self):
         return self.filters
@@ -53,18 +51,30 @@ class DoubledLayer:
     def get_convolutional_layer_result(self):
         return self.conv_res
 
+    def learn(self, error):
+        raise NotImplemented
+
 
 class FullConectionLayer:
-    def __init__(self, input_size, output_size=2, activation_function=sigmoid, seed=16):
+    def __init__(self, activation_func, activation_func_deriv, input_size, output_size=2, alfa=1, seed=16):
         np.random.RandomState(seed)
         self.weights = np.random.uniform(size=(output_size, input_size))
-        self.activation = activation_function
+        self.activation_function = activation_func
+        self.activation_function_derivative = activation_func_deriv
+        self.alfa = alfa
 
+    # Attention! weights param must have same size as this layer weights
+    def set_weights(self, weights):
+        self.weights = weights
+
+    # feed forward
     def forward(self, input_data):
-        return self.activation(np.dot(input_data, self.weights))
+        z = np.dot(input_data, self.weights)
+        return self.activation_function(z), z
 
     def get_weights(self):
         return self.weights
 
-    def learn(self):
-        raise NotImplemented
+    # Maybe it's will be better to move this to class field and static method
+    def cost_function(self, actual_answer, right_answer):
+        return
