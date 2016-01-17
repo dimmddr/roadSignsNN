@@ -3,18 +3,30 @@ import datetime as dt
 import os
 import timeit
 
+import cv2
 import numpy as np
 import numpy.lib.recfunctions
 
 import nn
+import prepare_images
+
+# TODO: Придумать что делать с разным размером изображений
+# TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
+# TODO: Найти баг в тройном вложенном цикле (если он там есть)
+# TODO: Реализовать обучение сверточного слоя
+# TODO: Реализовать систему изменения весов
+# TODO: Добавить возможность задавать количество обучающих примеров через которые изменяются веса
+# TODO: Придумать как определять правильность предположений первой нейросети в каскаде
+# TODO: ПРидумать или найти готовое решение как научить нейросеть масштабировать окно локации объекта
+
+
+dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
+annotation_path = dataset_path + 'allAnnotations.csv'
+negatives_path = dataset_path + "negatives.dat"
 
 
 def test_init(seed=16):
     global train_set_complete
-
-    dataset_path = "h:/_diplomaData/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
-    annotation_path = dataset_path + 'allAnnotations.csv'
-    negatives_path = dataset_path + "negatives.dat"
     rnd = np.random.RandomState(seed)
 
     # Read data from files
@@ -24,6 +36,32 @@ def test_init(seed=16):
 
     # Get random
     np.random.shuffle(train_set_complete)
+
+
+def find_sizes():
+    image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
+    negatives = np.genfromtxt(negatives_path, dtype=None)
+    all_imgs = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
+    all_imgs = all_imgs['Filename']
+    res1 = []
+    res2 = []
+    cnt = 0
+    for item in all_imgs:
+        img = cv2.imread(dataset_path + item.decode('utf8'), cv2.IMREAD_UNCHANGED)
+        if img is None:
+            print(item.decode('utf8'))
+            continue
+        res1.append(img.shape[0])
+        res2.append(img.shape[1])
+        cnt += 1
+        if cnt % 1000 == 0:
+            print(cnt)
+    print("res:")
+    print(min(res1))
+    print(max(res1))
+    print('--------------')
+    print(min(res2))
+    print(max(res2))
 
 
 def write_results(result: list, test_name):
@@ -106,7 +144,8 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
         test_init()
 
     res = []
-    ind = np.floor(len(train_set_complete) * 0.75)
+    # ind = np.floor(len(train_set_complete) * 0.75)
+    ind = 5
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
@@ -119,7 +158,10 @@ def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
                      )
 
         print("Learn")
-        m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
+        for i in range(ind):
+            img = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'))
+            nn.learning(x_in=img, lbl_in=lbl_train[i])
+
         print("Predict")
         # predict_res = []
         # for test in test_set:

@@ -2,7 +2,7 @@ import cv2
 
 
 def prepare(path_to_img):
-    img = cv2.cv2.imread(path_to_img.decode('utf8'), cv2.IMREAD_UNCHANGED)
+    img = cv2.imread(path_to_img, cv2.IMREAD_UNCHANGED)
     return img
 
 # x1 = image_data['Upper_left_corner_X'][0]

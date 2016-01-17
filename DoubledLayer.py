@@ -24,7 +24,7 @@ class DoubledLayer:
         self.conv_res = np.empty(shape=(len(self.filters),
                                         len(input_data) - h + 1,
                                         len(input_data[0]) - w + 1))
-        for filter_number in range(self.filters):
+        for filter_number in range(len(self.filters)):
             for i in range(len(input_data) - h + 1):
                 for ii in range(len(input_data[0]) - w + 1):
                     self.conv_res[filter_number, i, ii] = self.activation_function(
