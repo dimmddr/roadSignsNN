@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class DoubledLayer:
     def __init__(self, activation_func, activation_func_deriv, filters_size=(10, 5, 5), pooling_size=2, alfa=1,
                  seed=16):
@@ -8,7 +9,9 @@ class DoubledLayer:
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.pool_size = pooling_size
-        self.conv_res = np.empty(shape=(0, 0, 0))
+        # Я обрезал все изображения до 640х480 - в финальной системе все равно предполагается один размер изображения
+        # Плюс в каждом изображении ровно три слоя в данном сете - отсюда все магические цифры
+        self.conv_res = np.empty(shape=(480, 640, filters_size[0] * 3))
         self.pool_res = np.empty(shape=(0, 0, 0))
         self.alfa = alfa
 
@@ -20,16 +23,15 @@ class DoubledLayer:
         # Convolutional layer
         h = len(self.filters[0])
         w = len(self.filters[0, 0])
-        # It's bad, but only here I know size of input
-        self.conv_res = np.empty(shape=(len(self.filters),
-                                        len(input_data) - h + 1,
-                                        len(input_data[0]) - w + 1))
+        # Always in this set, for now at least
+        layers = 3
         for filter_number in range(len(self.filters)):
-            for i in range(len(input_data) - h + 1):
-                for ii in range(len(input_data[0]) - w + 1):
-                    self.conv_res[filter_number, i, ii] = self.activation_function(
-                            sum(input_data[i: i + h, ii: ii + w] * self.filters[filter_number])
-                    )
+            for input_layer in range(layers):
+                for i in range(len(input_data) - h):
+                    for ii in range(len(input_data[0]) - w):
+                        self.conv_res[i, ii, filter_number + filter_number * input_layer] = self.activation_function(
+                                np.sum(input_data[i: i + h, ii: ii + w, input_layer] * self.filters[filter_number])
+                        )
 
         # I think I need move this to another function, too much for one function already
         # Pooling layer

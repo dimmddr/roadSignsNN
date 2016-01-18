@@ -3,7 +3,12 @@ import cv2
 
 def prepare(path_to_img):
     img = cv2.imread(path_to_img, cv2.IMREAD_UNCHANGED)
-    return img
+    x1 = (img.shape[0] - 480) / 2
+    x2 = (img.shape[0] - 480) / 2 + 480
+    y1 = (img.shape[1] - 640) / 2
+    y2 = (img.shape[1] - 640) / 2 + 640
+    roi = img[x1: x2, y1: y2] / 255
+    return roi
 
 # x1 = image_data['Upper_left_corner_X'][0]
 # x2 = image_data['Lower_right_corner_X'][0]

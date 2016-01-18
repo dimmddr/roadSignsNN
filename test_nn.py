@@ -1,16 +1,14 @@
 import csv
 import datetime as dt
 import os
-import timeit
 
-import cv2
 import numpy as np
 import numpy.lib.recfunctions
 
 import nn
 import prepare_images
 
-# TODO: Придумать что делать с разным размером изображений
+# Забить и обрезать картинки до минимального размера
 # TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
 # TODO: Найти баг в тройном вложенном цикле (если он там есть)
 # TODO: Реализовать обучение сверточного слоя
@@ -32,36 +30,23 @@ def test_init(seed=16):
     # Read data from files
     image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
     negatives = np.genfromtxt(negatives_path, dtype=None)
+    negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
     train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
 
     # Get random
     np.random.shuffle(train_set_complete)
 
 
-def find_sizes():
+def test():
     image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
     negatives = np.genfromtxt(negatives_path, dtype=None)
-    all_imgs = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
-    all_imgs = all_imgs['Filename']
-    res1 = []
-    res2 = []
-    cnt = 0
-    for item in all_imgs:
-        img = cv2.imread(dataset_path + item.decode('utf8'), cv2.IMREAD_UNCHANGED)
-        if img is None:
-            print(item.decode('utf8'))
-            continue
-        res1.append(img.shape[0])
-        res2.append(img.shape[1])
-        cnt += 1
-        if cnt % 1000 == 0:
-            print(cnt)
-    print("res:")
-    print(min(res1))
-    print(max(res1))
-    print('--------------')
-    print(min(res2))
-    print(max(res2))
+    negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
+    train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
+    res = {}
+    for q in train_set_complete:
+        img = prepare_images.prepare(dataset_path + q['Filename'].decode('utf8'))
+        res[img.shape] = 1
+    print(res)
 
 
 def write_results(result: list, test_name):
@@ -96,45 +81,6 @@ def write_results(result: list, test_name):
                 writer.writerow(res)
     finally:
         os.chdir(wd)
-
-
-# test for train set size
-def test_learning_size(min_size=500, max_size=5000, step_size=500, init=False):
-    # I don't want to do it multiply times, read large file is long.
-    if not init:
-        test_init()
-
-    res = []
-    for ind in range(min_size, max_size, step_size):
-        print(ind)
-        hl = 25
-        alfa = 1
-        nn.init(input_size=28 * 28, hidden_size=hl, output_size=10, alfa_=alfa, seed=123)
-
-        train_set = train_set_complete[0:ind]
-
-        lbl_train = train_set[:, 0]
-        train_set = train_set[:, 1:]
-
-        print("Learn")
-        m_time = timeit.timeit(lambda: nn.learning(x_in=train_set, lbl_in=lbl_train), number=1)
-        # nn.learning(x_in=train_set, lbl_in=lbl_train)
-        print("Predict")
-        predict_res = []
-        for test in test_set:
-            predict_res.append(nn.predict(test))
-        s = sum(predict_res == lbl_test)
-        proc_n = s / len(lbl_test)
-        print(proc_n)
-        res.append({
-            'training_size': ind,
-            'accuracy': proc_n,
-            'learning_speed': alfa,
-            'hidden_layer_size': hl,
-            'time': m_time
-        })
-    write_results(res, "size_measurements")
-    return res
 
 
 # test for train speed
