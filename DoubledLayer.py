@@ -14,6 +14,7 @@ class DoubledLayer:
         # Я обрезал все изображения до 640х480 - в финальной системе все равно предполагается один размер изображения
         # Плюс в каждом изображении ровно три слоя в данном сете - отсюда все магические цифры
         self.conv_res = np.empty(shape=input_size + (filters_size[2],))
+        self.conv_z = np.empty(shape=input_size + (filters_size[2],))
         self.pool_res = np.empty(shape=(0, 0, 0))
         self.alfa = alfa
 
@@ -54,6 +55,9 @@ class DoubledLayer:
     # Can throw NameError
     def get_convolutional_layer_result(self):
         return self.conv_res
+
+    def get_z(self):
+        return self.conv_z
 
     def learn(self, error):
         raise NotImplemented

@@ -79,6 +79,10 @@ def learning(x_in, lbl_in):
     for res in forward_results:
         sigma = compute_output_error(answer=res.value.a, label=lbl, window=res.roi, z=res.value.z,
                                      outp_layer=first_outp)
+        w = first_outp.get_weights()
+        z_conv = first_conv.activation_function_derivative(first_conv.get_z())
+        # Проверить размерности
+        sigma_conv = np.dot(w, [sigma]) * z_conv
         first_conv.learn()
 
 
