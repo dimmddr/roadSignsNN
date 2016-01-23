@@ -1,9 +1,11 @@
+from collections import namedtuple
+
 import numpy as np
 
 
 class DoubledLayer:
-    def __init__(self, activation_func, activation_func_deriv, filters_size=(10, 5, 5), pooling_size=2, alfa=1,
-                 seed=16):
+    def __init__(self, activation_func, activation_func_deriv, filters_size=(12, 12, 10), pooling_size=2, alfa=1,
+                 input_size=(523, 1025, 3), seed=16):
         np.random.RandomState(seed)
         self.filters = np.random.uniform(size=filters_size)
         self.activation_function = activation_func
@@ -11,7 +13,7 @@ class DoubledLayer:
         self.pool_size = pooling_size
         # Я обрезал все изображения до 640х480 - в финальной системе все равно предполагается один размер изображения
         # Плюс в каждом изображении ровно три слоя в данном сете - отсюда все магические цифры
-        self.conv_res = np.empty(shape=(480, 640, filters_size[0] * 3))
+        self.conv_res = np.empty(shape=input_size + (filters_size[2],))
         self.pool_res = np.empty(shape=(0, 0, 0))
         self.alfa = alfa
 
@@ -71,8 +73,9 @@ class FullConectionLayer:
 
     # feed forward
     def forward(self, input_data):
+        Result = namedtuple('FullConnectionLayerResult', ['a', 'z'])
         z = np.dot(input_data, self.weights)
-        return self.activation_function(z), z
+        return Result(self.activation_function(z), z)
 
     def get_weights(self):
         return self.weights
