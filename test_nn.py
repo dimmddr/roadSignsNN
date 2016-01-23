@@ -8,7 +8,9 @@ import numpy.lib.recfunctions
 import nn
 import prepare_images
 
-# Забить и обрезать картинки до минимального размера
+# Дополнить изображения нулями до 1025х523 (максимальный размер + 1)
+# +1 нужен для того чтобы сделать значения нечетными, тогда после сверточного слоя мы получим массив с четным размером
+# а значит он без осложнений пройдет через pooling layer, где я беру максимум из 2х2 квадрата
 # TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
 # TODO: Реализовать обучение сверточного слоя
 # TODO: Реализовать систему изменения весов
@@ -83,7 +85,7 @@ def write_results(result: list, test_name):
 
 
 # test for train speed
-def test_learning_speed(min_speed=0.1, max_speed=2, step_size=0.1, init=False):
+def test_learning_speed(min_speed=1, max_speed=2, step_size=1, init=False):
     # I don't want to do it multiply times, read large file is long.
     if not init:
         test_init()
