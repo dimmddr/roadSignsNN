@@ -6,8 +6,11 @@ import numpy as np
 class DoubledLayer:
     def __init__(self, activation_func, activation_func_deriv, input_size, filters_size=(5, 5, 3 * 10), pooling_size=2,
                  alfa=1, seed=16):
-        np.random.RandomState(seed)
+        np.random.seed(seed)
         self.filters = np.random.uniform(size=filters_size)
+        self.filters_updates = np.empty_like(self.filters)
+        self.biases = np.random.uniform(size=filters_size[2])  # One bias for every filter
+        self.biases_updates = np.empty_like(self.biases)
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.pool_size = pooling_size
@@ -35,7 +38,7 @@ class DoubledLayer:
             for i in range(len(self.conv_res)):
                 for ii in range(len(self.conv_res[0])):
                     t = np.sum(input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1], layer % 3] *
-                               self.filters[:, :, layer])
+                               self.filters[:, :, layer]) + self.biases[layer]
                     self.conv_z[i, ii, layer] = t
                     self.conv_res[i, ii, layer] = self.activation_function(t)
 
@@ -48,10 +51,13 @@ class DoubledLayer:
                                                           i * self.pool_size: i * self.pool_size + self.pool_size,
                                                           ii * self.pool_size: ii * self.pool_size + self.pool_size,
                                                           layer])
+                    # argmax - find index of max element
+                    # unravel_index transform flat index into 2-D index
                     t = np.unravel_index(np.argmax(self.pool_res[
                                                    i * self.pool_size: i * self.pool_size + self.pool_size,
                                                    ii * self.pool_size: ii * self.pool_size + self.pool_size,
                                                    layer]), (self.pool_size, self.pool_size))
+                    # Transform slice index into full array index
                     self.pool_indexes[i, ii, layer] = (t[0] + i * self.pool_size, t[1] + ii * self.pool_size)
         return self.pool_res
 
@@ -65,11 +71,22 @@ class DoubledLayer:
     def learn(self, error):
         raise NotImplemented
 
+    def update(self):
+        self.filters += self.filters_updates
+        self.biases += self.biases_updates
+
+    def set_updates(self, filters, biases):
+        self.filters = filters
+        self.biases_updates = biases
+
 
 class FullConectionLayer:
-    def __init__(self, activation_func, activation_func_deriv, input_size, output_size=2, alfa=1, seed=16):
-        np.random.RandomState(seed)
+    def __init__(self, activation_func, activation_func_deriv, input_size, output_size, alfa=1, seed=16):
+        np.random.seed(seed)
         self.weights = np.random.uniform(size=(output_size, input_size))
+        self.weights_updates = np.empty_like(self.weights)
+        self.biases = np.random.uniform(size=output_size)
+        self.biases_updates = np.empty_like(self.biases)
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.alfa = alfa
@@ -81,8 +98,18 @@ class FullConectionLayer:
     # feed forward
     def forward(self, input_data):
         Result = namedtuple('FullConnectionLayerResult', ['a', 'z'])
-        z = np.dot(input_data, self.weights)
+        # input data have several dimension, but here I need it in only one
+        input_data = input_data.ravel()
+        z = np.dot(input_data, self.weights) + np.sum(self.biases)
         return Result(self.activation_function(z), z)
 
     def get_weights(self):
         return self.weights
+
+    def update(self):
+        self.weights += self.weights_updates
+        self.biases += self.biases_updates
+
+    def set_updates(self, weights, biases):
+        self.weights_updates = weights
+        self.biases_updates = biases

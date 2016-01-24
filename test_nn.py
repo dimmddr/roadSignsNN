@@ -26,7 +26,7 @@ negatives_path = dataset_path + "negatives.dat"
 
 def test_init(seed=16):
     global train_set_complete
-    rnd = np.random.RandomState(seed)
+    np.random.seed(seed)
 
     # Read data from files
     image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
@@ -85,7 +85,7 @@ def write_results(result: list, test_name):
 
 
 # test for train speed
-def test_learning_speed(min_speed=1, max_speed=2, step_size=1, init=False):
+def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
     # I don't want to do it multiply times, read large file is long.
     if not init:
         test_init()
@@ -128,7 +128,5 @@ def test_learning_speed(min_speed=1, max_speed=2, step_size=1, init=False):
 
 
 def test_all():
-    print("Test learning size")
-    test_learning_size(3500, 7000, 500)
     print("Test learning speed")
     test_learning_speed(0.5, 3, 0.5, init=True)
