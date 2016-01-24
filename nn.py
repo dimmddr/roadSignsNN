@@ -48,6 +48,8 @@ def prepare_roi(roi, window_size, step):
 def forward(input_image, window_size=(48, 48), step=4):
     Result = namedtuple('Result', ['roi', 'value'])
     res = []
+    # It's bad, I know
+    global conv_outp
     # TODO Проверить корректность вызова shape
     for y in range(input_image.shape[0] - window_size[0] + 1):
         for x in range(input_image.shape[1] - window_size[1] + 1):
@@ -86,6 +88,9 @@ def learning(x_in, lbl_in):
         z_conv = first_conv.activation_function_derivative(first_conv.get_z())
         # Проверить размерности
         sigma_conv = np.dot(w, [sigma]) * z_conv
+        full_connection_biases_update = sigma
+        full_connection_weights_update = conv_outp.ravel() * sigma
+        first_outp.add_updates(full_connection_weights_update, full_connection_biases_update)
         first_conv.learn()
 
 

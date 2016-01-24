@@ -8,9 +8,9 @@ class DoubledLayer:
                  alfa=1, seed=16):
         np.random.seed(seed)
         self.filters = np.random.uniform(size=filters_size)
-        self.filters_updates = np.empty_like(self.filters)
+        self.filters_updates = np.zeros_like(self.filters)
         self.biases = np.random.uniform(size=filters_size[2])  # One bias for every filter
-        self.biases_updates = np.empty_like(self.biases)
+        self.biases_updates = np.zeros_like(self.biases)
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.pool_size = pooling_size
@@ -74,19 +74,21 @@ class DoubledLayer:
     def update(self):
         self.filters += self.filters_updates
         self.biases += self.biases_updates
+        self.filters_updates = np.zeros_like(self.filters_updates)
+        self.biases_updates = np.zeros_like(self.biases_updates)
 
-    def set_updates(self, filters, biases):
-        self.filters = filters
-        self.biases_updates = biases
+    def add_updates(self, filters, biases):
+        self.filters += filters
+        self.biases_updates += biases
 
 
 class FullConectionLayer:
     def __init__(self, activation_func, activation_func_deriv, input_size, output_size, alfa=1, seed=16):
         np.random.seed(seed)
         self.weights = np.random.uniform(size=(output_size, input_size))
-        self.weights_updates = np.empty_like(self.weights)
+        self.weights_updates = np.zeros_like(self.weights)
         self.biases = np.random.uniform(size=output_size)
-        self.biases_updates = np.empty_like(self.biases)
+        self.biases_updates = np.zeros_like(self.biases)
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.alfa = alfa
@@ -109,7 +111,9 @@ class FullConectionLayer:
     def update(self):
         self.weights += self.weights_updates
         self.biases += self.biases_updates
+        self.weights_updates = np.zeros_like(self.weights_updates)
+        self.biases_updates = np.zeros_like(self.biases_updates)
 
-    def set_updates(self, weights, biases):
-        self.weights_updates = weights
-        self.biases_updates = biases
+    def add_updates(self, weights, biases):
+        self.weights_updates += weights
+        self.biases_updates += biases
