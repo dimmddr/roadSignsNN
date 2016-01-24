@@ -9,7 +9,7 @@ class DoubledLayer:
         np.random.seed(seed)
         self.filters = np.random.uniform(size=filters_size)
         self.filters_updates = np.zeros_like(self.filters)
-        self.biases = np.random.uniform(size=filters_size[2])  # One bias for every filter
+        self.biases = np.random.uniform(size=(filters_size[2]))  # One bias for every filter
         self.biases_updates = np.zeros_like(self.biases)
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv

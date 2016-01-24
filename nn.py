@@ -11,7 +11,7 @@ def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16)
     image_size = (523, 1025, 3)
     # Size of window, 12x12 made from 48x48
     input_size = (12, 12, 3)
-    filter_size = filter_size[2] * filters_count
+    filter_size[2] *= filters_count
     first_conv = DoubledLayer(
             activation_func=sigmoid,
             activation_func_deriv=d_sigmoid,
