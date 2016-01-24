@@ -85,13 +85,16 @@ def learning(x_in, lbl_in):
         sigma = compute_output_error(answer=res.value.a, label=lbl, window=res.roi, z=res.value.z,
                                      outp_layer=first_outp)
         w = first_outp.get_weights()
-        z_conv = first_conv.activation_function_derivative(first_conv.get_z())
-        # Проверить размерности
-        sigma_conv = np.dot(w, [sigma]) * z_conv
+        # Т.к. сигма в данном случае число, то матричное умножение вектора весов на сигму будет аналогично
+        # поэлементному умножению весов на это число
+        # Также надо отметить что я разделил формулу расчета сигмы и часть буду выполнять в методе класса двойного слоя
+        partial_sigma_conv = w * sigma
         full_connection_biases_update = sigma
         full_connection_weights_update = conv_outp.ravel() * sigma
         first_outp.add_updates(full_connection_weights_update, full_connection_biases_update)
-        first_conv.learn()
+        first_conv.learn(partial_sigma_conv, x_in[res.roi.xmin:res.roi.xmax, res.roi.ymin:res.roi.ymax])
+    first_outp.update()
+    first_conv.update()
 
 
 def predict(x_in):

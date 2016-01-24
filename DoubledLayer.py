@@ -34,9 +34,9 @@ class DoubledLayer:
     # Terrible, terrible 3 nested loops
     def forward(self, input_data: "numpy array of input values"):
         # Convolutional layer
-        for layer in range(len(self.conv_res[0, 0])):
-            for i in range(len(self.conv_res)):
-                for ii in range(len(self.conv_res[0])):
+        for layer in range(self.conv_res.shape[2]):
+            for i in range(self.conv_res.shape[0]):
+                for ii in range(self.conv_res.shape[1]):
                     t = np.sum(input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1], layer % 3] *
                                self.filters[:, :, layer]) + self.biases[layer]
                     self.conv_z[i, ii, layer] = t
@@ -68,8 +68,22 @@ class DoubledLayer:
     def get_z(self):
         return self.conv_z
 
-    def learn(self, error):
-        raise NotImplemented
+    def learn(self, partial_sigma, input_data):
+        sigma = np.zeros_like(self.conv_z)
+        # Beyond good and evil. I cry with tears of blood when I see this code
+        for layer in range(self.pool_indexes.shape[2]):
+            for i in range(self.pool_indexes.shape[0]):
+                for ii in range(self.pool_indexes.shape[1]):
+                    sigma[self.pool_indexes[i, ii, layer][0], self.pool_indexes[i, ii, layer][1], layer] = \
+                        partial_sigma[i, ii, layer]
+        sigma = sigma * self.activation_function_derivative(self.conv_z)
+        weights = np.zeros_like(self.filters_updates)
+        for layer in range(sigma.shape[2]):
+            for i in range(sigma.shape[0]):
+                for ii in range(sigma.shape[1]):
+                    weights[:, :, layer] += input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1],
+                                            layer % 3] * sigma[i, ii, layer]
+        self.add_updates(filters=weights, biases=sigma)
 
     def update(self):
         self.filters += self.filters_updates
