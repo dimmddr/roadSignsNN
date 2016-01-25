@@ -22,7 +22,7 @@ def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16)
     first_outp = FullConectionLayer(
             activation_func=sigmoid,
             activation_func_deriv=d_sigmoid,
-            input_size=(input_size[0] - filter_size[0] + 1) * (input_size[1] - filter_size[1] + 1) * filters_count /
+            input_size=(input_size[0] - filter_size[0] + 1) * (input_size[1] - filter_size[1] + 1) * filter_size[2] /
                        pool_size ** 2,
             output_size=1,
             seed=seed

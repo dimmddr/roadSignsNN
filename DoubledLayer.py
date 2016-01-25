@@ -33,6 +33,7 @@ class DoubledLayer:
 
     # Terrible, terrible 3 nested loops
     def forward(self, input_data: "numpy array of input values"):
+        # TODO Сверточный слой после активации возвращает одни единицы - сделать с этим что-нибудь
         # Convolutional layer
         for layer in range(self.conv_res.shape[2]):
             for i in range(self.conv_res.shape[0]):
@@ -116,6 +117,8 @@ class FullConectionLayer:
         Result = namedtuple('FullConnectionLayerResult', ['a', 'z'])
         # input data have several dimension, but here I need it in only one
         input_data = input_data.ravel()
+        if 1 == len(input_data.shape):
+            input_data = input_data.reshape(input_data.shape + (self.weights.shape[0],))
         z = np.dot(input_data, self.weights) + np.sum(self.biases)
         return Result(self.activation_function(z), z)
 
