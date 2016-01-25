@@ -14,13 +14,13 @@ class DoubledLayer:
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.pool_size = pooling_size
-        self.conv_res = np.empty(shape=(input_size[0] - filters_size[0] + 1,
+        self.conv_res = np.zeros(shape=(input_size[0] - filters_size[0] + 1,
                                         input_size[1] - filters_size[1] + 1,
                                         filters_size[2]))
-        self.conv_z = np.empty(shape=(input_size[0] - filters_size[0] + 1,
+        self.conv_z = np.zeros(shape=(input_size[0] - filters_size[0] + 1,
                                       input_size[1] - filters_size[1] + 1,
                                       filters_size[2]))
-        self.pool_res = np.empty(shape=((input_size[0] - filters_size[0] + 1) / pooling_size,
+        self.pool_res = np.zeros(shape=((input_size[0] - filters_size[0] + 1) / pooling_size,
                                         (input_size[1] - filters_size[1] + 1) / pooling_size,
                                         filters_size[2]))
         self.pool_indexes = np.empty(shape=((input_size[0] - filters_size[0] + 1) / pooling_size,
@@ -47,13 +47,13 @@ class DoubledLayer:
         for layer in range(self.pool_res.shape[2]):
             for i in range(self.pool_res.shape[0]):
                 for ii in range(self.pool_res.shape[1]):
-                    self.pool_res[i, ii, layer] = np.amax(self.pool_res[
+                    self.pool_res[i, ii, layer] = np.amax(self.conv_res[
                                                           i * self.pool_size: i * self.pool_size + self.pool_size,
                                                           ii * self.pool_size: ii * self.pool_size + self.pool_size,
                                                           layer])
                     # argmax - find index of max element
                     # unravel_index transform flat index into 2-D index
-                    t = np.unravel_index(np.argmax(self.pool_res[
+                    t = np.unravel_index(np.argmax(self.conv_res[
                                                    i * self.pool_size: i * self.pool_size + self.pool_size,
                                                    ii * self.pool_size: ii * self.pool_size + self.pool_size,
                                                    layer]), (self.pool_size, self.pool_size))

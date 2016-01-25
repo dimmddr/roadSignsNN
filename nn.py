@@ -11,7 +11,7 @@ def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16)
     image_size = (523, 1025, 3)
     # Size of window, 12x12 made from 48x48
     input_size = (12, 12, 3)
-    filter_size[2] *= filters_count
+    filter_size = (filter_size[0], filter_size[1], filter_size[2] * filters_count)
     first_conv = DoubledLayer(
             activation_func=sigmoid,
             activation_func_deriv=d_sigmoid,
@@ -50,7 +50,6 @@ def forward(input_image, window_size=(48, 48), step=4):
     res = []
     # It's bad, I know
     global conv_outp
-    # TODO Проверить корректность вызова shape
     for y in range(input_image.shape[0] - window_size[0] + 1):
         for x in range(input_image.shape[1] - window_size[1] + 1):
             roi = input_image[y: y + window_size[0], x: x + window_size[0]]
