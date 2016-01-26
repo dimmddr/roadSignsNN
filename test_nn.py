@@ -92,7 +92,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
 
     res = []
     # ind = np.floor(len(train_set_complete) * 0.75)
-    ind = 5
+    ind = 1
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf

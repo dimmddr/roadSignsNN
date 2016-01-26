@@ -1,13 +1,16 @@
 from DoubledLayer import *
 
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
+debug_mode = False
 
 
 # For the start I create only one neural net. I will add more later.
-def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16):
+def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16, debug=False):
     global alfa
     global first_conv
     global first_outp
+    global debug_mode
+
     image_size = (523, 1025, 3)
     # Size of window, 12x12 made from 48x48
     input_size = (12, 12, 3)
@@ -28,6 +31,10 @@ def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16)
             seed=seed
     )
     alfa = alfa_
+    if (debug):
+        debug_mode = True
+        first_conv.set_debug()
+        first_outp.set_debug()
 
 
 def sigmoid(x):
@@ -92,6 +99,8 @@ def learning(x_in, lbl_in):
         full_connection_weights_update = conv_outp.ravel() * sigma
         first_outp.add_updates(full_connection_weights_update, full_connection_biases_update)
         first_conv.learn(partial_sigma_conv, x_in[res.roi.xmin:res.roi.xmax, res.roi.ymin:res.roi.ymax])
+    print(np.amax(first_conv.conv_z))
+    print(np.amin(first_conv.conv_z))
     first_outp.update()
     first_conv.update()
 

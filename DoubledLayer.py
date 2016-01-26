@@ -27,12 +27,17 @@ class DoubledLayer:
                                             (input_size[1] - filters_size[1] + 1) / pooling_size,
                                             filters_size[2]), dtype=object)
         self.alfa = alfa
+        self.debug = False
 
     def get_weights(self):
+        if self.debug:
+            print("Doubled layer. Get weights function")
         return self.filters
 
     # Terrible, terrible 3 nested loops
     def forward(self, input_data: "numpy array of input values"):
+        if self.debug:
+            print("Doubled layer. Forward function. Convolutional layer stage")
         # TODO Сверточный слой после активации возвращает одни единицы - сделать с этим что-нибудь
         # Convolutional layer
         for layer in range(self.conv_res.shape[2]):
@@ -43,6 +48,8 @@ class DoubledLayer:
                     self.conv_z[i, ii, layer] = t
                     self.conv_res[i, ii, layer] = self.activation_function(t)
 
+        if self.debug:
+            print("Doubled layer. Forward function. Pooling layer stage")
         # I think I need move this to another function, too much for one function already
         # Pooling layer
         for layer in range(self.pool_res.shape[2]):
@@ -64,12 +71,18 @@ class DoubledLayer:
 
     # Can throw NameError
     def get_convolutional_layer_result(self):
+        if self.debug:
+            print("Doubled layer. Get convolutional layer result function")
         return self.conv_res
 
     def get_z(self):
+        if self.debug:
+            print("Doubled layer. Get z function")
         return self.conv_z
 
     def learn(self, partial_sigma, input_data):
+        if self.debug:
+            print("Doubled layer. Learn function")
         sigma = np.zeros_like(self.conv_z)
         # Beyond good and evil. I cry with tears of blood when I see this code
         for layer in range(self.pool_indexes.shape[2]):
@@ -87,14 +100,21 @@ class DoubledLayer:
         self.add_updates(filters=weights, biases=sigma)
 
     def update(self):
+        if self.debug:
+            print("Doubled layer. Update function")
         self.filters += self.filters_updates
         self.biases += self.biases_updates
         self.filters_updates = np.zeros_like(self.filters_updates)
         self.biases_updates = np.zeros_like(self.biases_updates)
 
     def add_updates(self, filters, biases):
+        if self.debug:
+            print("Doubled layer. Add update function")
         self.filters += filters
         self.biases_updates += biases
+
+    def set_debug(self):
+        self.debug = True
 
 
 class FullConectionLayer:
@@ -107,13 +127,18 @@ class FullConectionLayer:
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.alfa = alfa
+        self.debug = False
 
     # Attention! weights param must have same size as this layer weights
     def set_weights(self, weights):
+        if self.debug:
+            print("Full connection layer. Set weights function")
         self.weights = weights
 
     # feed forward
     def forward(self, input_data):
+        if self.debug:
+            print("Full connection layer. Forward function")
         Result = namedtuple('FullConnectionLayerResult', ['a', 'z'])
         # input data have several dimension, but here I need it in only one
         input_data = input_data.ravel()
@@ -123,14 +148,23 @@ class FullConectionLayer:
         return Result(self.activation_function(z), z)
 
     def get_weights(self):
+        if self.debug:
+            print("Full connection layer. Get weights function")
         return self.weights
 
     def update(self):
+        if self.debug:
+            print("Full connection layer. Update function")
         self.weights += self.weights_updates
         self.biases += self.biases_updates
         self.weights_updates = np.zeros_like(self.weights_updates)
         self.biases_updates = np.zeros_like(self.biases_updates)
 
     def add_updates(self, weights, biases):
+        if self.debug:
+            print("Full connection layer. Add updates function")
         self.weights_updates += weights
         self.biases_updates += biases
+
+    def set_debug(self):
+        self.debug = True
