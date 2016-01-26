@@ -47,12 +47,16 @@ def d_sigmoid(x):
 
 # Generators can be move out later, when I will be in need of speed
 def prepare_roi(roi, window_size, step):
+    if debug_mode:
+        print("Neural net. Prepare roi function")
     res = roi[np.array([i for i in range(0, window_size[0], step)])]
     res = res[:, np.array([i for i in range(0, window_size[1], step)])]
     return res
 
 
 def forward(input_image, window_size=(48, 48), step=4):
+    if debug_mode:
+        print("Neural net. Forward function")
     Result = namedtuple('Result', ['roi', 'value'])
     res = []
     # It's bad, I know
@@ -69,6 +73,8 @@ def forward(input_image, window_size=(48, 48), step=4):
 
 # Here I used quadratic cost function, if I change cost function I would need to rewrite this function
 def compute_covering(window, label):
+    if debug_mode:
+        print("Neural net. Compute covering function")
     dx = min(window.xmax, label.xmax) - max(window.xmin, label.xmin)
     dy = min(window.ymax, label.ymax) - max(window.ymin, label.ymin)
     if (dx >= 0) and (dy >= 0):
@@ -78,12 +84,16 @@ def compute_covering(window, label):
 
 
 def compute_output_error(answer, label, window, z, outp_layer, percent):
+    if debug_mode:
+        print("Neural net. Compute output error function")
     covering_percent = compute_covering(window, label)
     correct_answer = int(covering_percent >= percent)
     return (correct_answer - answer) * outp_layer.activation_function_derivative(z)
 
 
 def learning(x_in, lbl_in):
+    if debug_mode:
+        print("Neural net. Learning function")
     forward_results = forward(x_in)
     # Convert tuple into named tuple
     lbl = Rectangle(lbl_in[0], lbl_in[1], lbl_in[2], lbl_in[3])
@@ -106,4 +116,6 @@ def learning(x_in, lbl_in):
 
 
 def predict(x_in):
+    if debug_mode:
+        print("Neural net. Predict function")
     raise NotImplemented
