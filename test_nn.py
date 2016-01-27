@@ -1,6 +1,7 @@
 import csv
 import datetime as dt
 import os
+import timeit
 
 import numpy as np
 import numpy.lib.recfunctions
@@ -43,11 +44,10 @@ def test():
     negatives = np.genfromtxt(negatives_path, dtype=None)
     negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
     train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
-    res = {}
-    for q in train_set_complete:
-        img = prepare_images.prepare(dataset_path + q['Filename'].decode('utf8'))
-        res[img.shape] = 1
-    print(res)
+    # img = prepare_images.prepare(dataset_path + train_set_complete[0]['Filename'].decode('utf8'))
+    res = timeit.timeit(lambda: prepare_images.prepare(dataset_path + train_set_complete[0]['Filename'].decode('utf8')),
+                        number=1000)
+    print(res / 1000)
 
 
 def write_results(result: list, test_name):
@@ -85,7 +85,7 @@ def write_results(result: list, test_name):
 
 
 # test for train speed
-def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
+def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False, debug=False):
     # I don't want to do it multiply times, read large file is long.
     if not init:
         test_init()
@@ -96,7 +96,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
-        nn.init(alfa_=alfa, seed=123)
+        nn.init(alfa_=alfa, seed=123, debug=debug)
         train_set = train_set_complete['Filename'][0:ind]
         lbl_train = (train_set_complete['Upper_left_corner_X'][0:ind],
                      train_set_complete['Upper_left_corner_Y'][0:ind],

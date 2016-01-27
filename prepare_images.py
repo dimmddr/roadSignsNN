@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 IMG_WIDTH = 1025
 IMG_HEIGHT = 523
@@ -9,6 +10,9 @@ def prepare(path_to_img):
     res = cv2.copyMakeBorder(src=img,
                              top=0, left=0, bottom=IMG_HEIGHT - img.shape[0], right=IMG_WIDTH - img.shape[1],
                              borderType=cv2.BORDER_CONSTANT, value=0)
+    m = np.mean(res)
+    std = np.std(res)
+    res = (res - m) / std
     return res
 
 # x1 = image_data['Upper_left_corner_X'][0]

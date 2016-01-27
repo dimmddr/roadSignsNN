@@ -57,6 +57,8 @@ def prepare_roi(roi, window_size, step):
 def forward(input_image, window_size=(48, 48), step=4):
     if debug_mode:
         print("Neural net. Forward function")
+        print("\n\n\n------------------------------\n\n\n")
+        print("")
     Result = namedtuple('Result', ['roi', 'value'])
     res = []
     # It's bad, I know
