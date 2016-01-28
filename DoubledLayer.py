@@ -38,13 +38,14 @@ class DoubledLayer:
     def forward(self, input_data: "numpy array of input values"):
         if self.debug:
             print("Doubled layer. Forward function. Convolutional layer stage")
-        # TODO Сверточный слой после активации возвращает одни единицы - сделать с этим что-нибудь
         # Convolutional layer
         for layer in range(self.conv_res.shape[2]):
             for i in range(self.conv_res.shape[0]):
                 for ii in range(self.conv_res.shape[1]):
-                    t = np.sum(input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1], layer % 3] *
-                               self.filters[:, :, layer]) + self.biases[layer]
+                    t = np.dot(input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1], layer % 3]
+                               .reshape((1, self.filters[:, :, layer].size)),
+                               self.filters[:, :, layer].reshape((self.filters[:, :, layer].size, 1))) + self.biases[
+                            layer]
                     self.conv_z[i, ii, layer] = t
                     self.conv_res[i, ii, layer] = self.activation_function(t)
 
