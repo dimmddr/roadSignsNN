@@ -82,6 +82,7 @@ class DoubledLayer:
     def learn(self, partial_sigma, input_data):
         if self.debug:
             print("Doubled layer. Learn function")
+        partial_sigma = partial_sigma.reshape(self.pool_res.shape)
         sigma = np.zeros_like(self.conv_z)
         # Beyond good and evil. I cry with tears of blood when I see this code
         for layer in range(self.pool_indexes.shape[2]):
@@ -91,12 +92,13 @@ class DoubledLayer:
                         partial_sigma[i, ii, layer]
         sigma = sigma * self.activation_function_derivative(self.conv_z)
         weights = np.zeros_like(self.filters_updates)
-        for layer in range(sigma.shape[2]):
+        for filter_number in range(sigma.shape[2]):
             for i in range(sigma.shape[0]):
                 for ii in range(sigma.shape[1]):
-                    weights[:, :, layer] += input_data[i: i + self.filters_size[0], ii: ii + self.filters_size[1],
-                                            layer % 3] * sigma[i, ii, layer]
-        self.add_updates(filters=weights, biases=sigma)
+                    weights[:, filter_number] += \
+                        input_data[i: i + self.filters_size[0], ii: ii + self.filters_size[1], :].reshape(
+                                self.filters[:, filter_number].size) * sigma[i, ii, filter_number]
+        self.add_updates(filters=weights, biases=np.sum(sigma, axis=(0, 1)))
 
     def update(self):
         if self.debug:

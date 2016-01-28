@@ -109,9 +109,7 @@ def learning(x_in, lbl_in):
             full_connection_biases_update = sigma
             full_connection_weights_update = conv_outp.ravel() * sigma
             first_outp.add_updates(full_connection_weights_update, full_connection_biases_update)
-            first_conv.learn(partial_sigma_conv, x_in[window.xmin:window.xmax, window.ymin:window.ymax])
-    print(np.amax(first_conv.conv_z))
-    print(np.amin(first_conv.conv_z))
+            first_conv.learn(partial_sigma_conv, roi)
     first_outp.update()
     first_conv.update()
 
