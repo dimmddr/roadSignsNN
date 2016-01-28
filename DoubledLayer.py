@@ -17,9 +17,7 @@ class DoubledLayer:
         self.conv_res = np.zeros(shape=(input_size[0] - filters_size[0] + 1,
                                         input_size[1] - filters_size[1] + 1,
                                         filters_size[2]))
-        self.conv_z = np.zeros(shape=(input_size[0] - filters_size[0] + 1,
-                                      input_size[1] - filters_size[1] + 1,
-                                      filters_size[2]))
+        self.conv_z = np.zeros_like(self.conv_res)
         self.pool_res = np.zeros(shape=((input_size[0] - filters_size[0] + 1) / pooling_size,
                                         (input_size[1] - filters_size[1] + 1) / pooling_size,
                                         filters_size[2]))

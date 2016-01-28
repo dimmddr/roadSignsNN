@@ -54,23 +54,12 @@ def prepare_roi(roi, window_size, step):
     return res
 
 
-def forward(input_image, window_size=(48, 48), step=4):
+def forward(input_image):
     if debug_mode:
         print("Neural net. Forward function")
-        print("\n\n\n------------------------------\n\n\n")
-        print("")
-    Result = namedtuple('Result', ['roi', 'value'])
-    res = []
-    # It's bad, I know
-    global conv_outp
-    for y in range(input_image.shape[0] - window_size[0] + 1):
-        for x in range(input_image.shape[1] - window_size[1] + 1):
-            roi = input_image[y: y + window_size[0], x: x + window_size[0]]
-            roi = prepare_roi(roi, window_size, step)
-            conv_outp = first_conv.forward(roi)
-            result = Result(Rectangle(x, y, x + window_size[0], y + window_size[1]), first_outp.forward(conv_outp))
-            res.append(result)
-    return res
+    conv_outp = first_conv.forward(input_image)
+    result = (first_outp.forward(conv_outp), conv_outp)
+    return result
 
 
 # Here I used quadratic cost function, if I change cost function I would need to rewrite this function
@@ -96,21 +85,28 @@ def compute_output_error(answer, label, window, z, outp_layer, percent):
 def learning(x_in, lbl_in):
     if debug_mode:
         print("Neural net. Learning function")
-    forward_results = forward(x_in)
+    # TODO Придумать куда вынести эти параметры
+    window_size = (48, 48)
+    step = 4
     # Convert tuple into named tuple
     lbl = Rectangle(lbl_in[0], lbl_in[1], lbl_in[2], lbl_in[3])
-    for res in forward_results:
-        sigma = compute_output_error(answer=res.value.a, label=lbl, window=res.roi, z=res.value.z,
-                                     outp_layer=first_outp)
-        w = first_outp.get_weights()
-        # Т.к. сигма в данном случае число, то матричное умножение вектора весов на сигму будет аналогично
-        # поэлементному умножению весов на это число
-        # Также надо отметить что я разделил формулу расчета сигмы и часть буду выполнять в методе класса двойного слоя
-        partial_sigma_conv = w * sigma
-        full_connection_biases_update = sigma
-        full_connection_weights_update = conv_outp.ravel() * sigma
-        first_outp.add_updates(full_connection_weights_update, full_connection_biases_update)
-        first_conv.learn(partial_sigma_conv, x_in[res.roi.xmin:res.roi.xmax, res.roi.ymin:res.roi.ymax])
+    for y in range(x_in.shape[0] - window_size[0] + 1):
+        for x in range(x_in.shape[1] - window_size[1] + 1):
+            window = Rectangle(xmin=x, ymin=y, xmax=x + window_size[0], ymax=window_size[0])
+            roi = x_in[window.ymin: window.ymax, window.xmin: window.xmax]
+            roi = prepare_roi(roi, window_size, step)
+            (forward_results, conv_outp) = forward(roi)
+            sigma = compute_output_error(answer=forward_results.a, label=lbl, window=window, z=forward_results.z,
+                                         outp_layer=first_outp)
+            w = first_outp.get_weights()
+            # Т.к. сигма в данном случае число, то матричное умножение вектора весов на сигму будет аналогично
+            # поэлементному умножению весов на это число
+            # Также надо отметить что я разделил формулу расчета сигмы и часть буду выполнять в методе класса двойного слоя
+            partial_sigma_conv = w * sigma
+            full_connection_biases_update = sigma
+            full_connection_weights_update = conv_outp.ravel() * sigma
+            first_outp.add_updates(full_connection_weights_update, full_connection_biases_update)
+            first_conv.learn(partial_sigma_conv, x_in[window.xmin:window.xmax, window.ymin:window.ymax])
     print(np.amax(first_conv.conv_z))
     print(np.amin(first_conv.conv_z))
     first_outp.update()
