@@ -10,28 +10,32 @@ def init(alfa_=1, filter_size=(5, 5, 3), filters_count=10, pool_size=2, seed=16,
     global first_conv
     global first_outp
     global debug_mode
+    global window_size
+    global stride
 
     image_size = (523, 1025, 3)
+    window_size = (48, 48)
+    stride = 4
     # Size of window, 12x12 made from 48x48
     input_size = (12, 12, 3)
-    filter_size = (filter_size[0], filter_size[1], filter_size[2] * filters_count)
     first_conv = DoubledLayer(
             activation_func=sigmoid,
             activation_func_deriv=d_sigmoid,
             input_size=input_size,
             filters_size=filter_size,
+            filters_count=filters_count,
             pooling_size=pool_size,
             seed=seed)
     first_outp = FullConectionLayer(
             activation_func=sigmoid,
             activation_func_deriv=d_sigmoid,
-            input_size=(input_size[0] - filter_size[0] + 1) * (input_size[1] - filter_size[1] + 1) * filter_size[2] /
+            input_size=(input_size[0] - filter_size[0] + 1) * (input_size[1] - filter_size[1] + 1) * filters_count /
                        pool_size ** 2,
             output_size=1,
             seed=seed
     )
     alfa = alfa_
-    if (debug):
+    if debug:
         debug_mode = True
         first_conv.set_debug()
         first_outp.set_debug()
@@ -46,11 +50,11 @@ def d_sigmoid(x):
 
 
 # Generators can be move out later, when I will be in need of speed
-def prepare_roi(roi, window_size, step):
+def prepare_roi(roi):
     if debug_mode:
         print("Neural net. Prepare roi function")
-    res = roi[np.array([i for i in range(0, window_size[0], step)])]
-    res = res[:, np.array([i for i in range(0, window_size[1], step)])]
+    res = roi[np.array([i for i in range(0, window_size[0], stride)])]
+    res = res[:, np.array([i for i in range(0, window_size[1], stride)])]
     return res
 
 
@@ -85,23 +89,22 @@ def compute_output_error(answer, label, window, z, outp_layer, percent):
 def learning(x_in, lbl_in):
     if debug_mode:
         print("Neural net. Learning function")
-    # TODO Придумать куда вынести эти параметры
-    window_size = (48, 48)
-    step = 4
     # Convert tuple into named tuple
     lbl = Rectangle(lbl_in[0], lbl_in[1], lbl_in[2], lbl_in[3])
+    percent = 0.5
     for y in range(x_in.shape[0] - window_size[0] + 1):
         for x in range(x_in.shape[1] - window_size[1] + 1):
             window = Rectangle(xmin=x, ymin=y, xmax=x + window_size[0], ymax=window_size[0])
             roi = x_in[window.ymin: window.ymax, window.xmin: window.xmax]
-            roi = prepare_roi(roi, window_size, step)
+            roi = prepare_roi(roi)
             (forward_results, conv_outp) = forward(roi)
             sigma = compute_output_error(answer=forward_results.a, label=lbl, window=window, z=forward_results.z,
-                                         outp_layer=first_outp)
+                                         outp_layer=first_outp, percent=percent)
             w = first_outp.get_weights()
             # Т.к. сигма в данном случае число, то матричное умножение вектора весов на сигму будет аналогично
             # поэлементному умножению весов на это число
-            # Также надо отметить что я разделил формулу расчета сигмы и часть буду выполнять в методе класса двойного слоя
+            # Также надо отметить что я разделил формулу расчета сигмы
+            # и часть буду выполнять в методе класса двойного слоя
             partial_sigma_conv = w * sigma
             full_connection_biases_update = sigma
             full_connection_weights_update = conv_outp.ravel() * sigma

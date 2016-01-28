@@ -4,26 +4,27 @@ import numpy as np
 
 
 class DoubledLayer:
-    def __init__(self, activation_func, activation_func_deriv, input_size, filters_size=(5, 5, 3 * 10), pooling_size=2,
-                 alfa=1, seed=16):
+    def __init__(self, activation_func, activation_func_deriv, input_size, filters_size=(5, 5, 3), filters_count=10,
+                 pooling_size=2, alfa=1, seed=16):
         np.random.seed(seed)
-        self.filters = np.random.uniform(size=filters_size)
+        self.filters = np.random.uniform(size=(np.prod(filters_size), filters_count))
+        self.filters_size = filters_size
         self.filters_updates = np.zeros_like(self.filters)
-        self.biases = np.random.uniform(size=(filters_size[2]))  # One bias for every filter
+        self.biases = np.random.uniform(size=filters_count)  # One bias for every filter
         self.biases_updates = np.zeros_like(self.biases)
         self.activation_function = activation_func
         self.activation_function_derivative = activation_func_deriv
         self.pool_size = pooling_size
         self.conv_res = np.zeros(shape=(input_size[0] - filters_size[0] + 1,
                                         input_size[1] - filters_size[1] + 1,
-                                        filters_size[2]))
+                                        filters_count))
         self.conv_z = np.zeros_like(self.conv_res)
         self.pool_res = np.zeros(shape=((input_size[0] - filters_size[0] + 1) / pooling_size,
                                         (input_size[1] - filters_size[1] + 1) / pooling_size,
-                                        filters_size[2]))
+                                        filters_count))
         self.pool_indexes = np.empty(shape=((input_size[0] - filters_size[0] + 1) / pooling_size,
                                             (input_size[1] - filters_size[1] + 1) / pooling_size,
-                                            filters_size[2]), dtype=object)
+                                            filters_count), dtype=object)
         self.alfa = alfa
         self.debug = False
 
@@ -37,15 +38,14 @@ class DoubledLayer:
         if self.debug:
             print("Doubled layer. Forward function. Convolutional layer stage")
         # Convolutional layer
-        for layer in range(self.conv_res.shape[2]):
+        for filter_number in range(self.filters.shape[1]):
             for i in range(self.conv_res.shape[0]):
                 for ii in range(self.conv_res.shape[1]):
-                    t = np.dot(input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1], layer % 3]
-                               .reshape((1, self.filters[:, :, layer].size)),
-                               self.filters[:, :, layer].reshape((self.filters[:, :, layer].size, 1))) + self.biases[
-                            layer]
-                    self.conv_z[i, ii, layer] = t
-                    self.conv_res[i, ii, layer] = self.activation_function(t)
+                    t = np.dot(input_data[i: i + self.filters_size[0], ii: ii + self.filters_size[1], :]
+                               .reshape((1, self.filters[:, filter_number].size)),
+                               self.filters[:, filter_number]) + self.biases[filter_number]
+                    self.conv_z[i, ii, filter_number] = t
+                    self.conv_res[i, ii, filter_number] = self.activation_function(t)
 
         if self.debug:
             print("Doubled layer. Forward function. Pooling layer stage")
@@ -94,7 +94,7 @@ class DoubledLayer:
         for layer in range(sigma.shape[2]):
             for i in range(sigma.shape[0]):
                 for ii in range(sigma.shape[1]):
-                    weights[:, :, layer] += input_data[i: i + self.filters.shape[0], ii: ii + self.filters.shape[1],
+                    weights[:, :, layer] += input_data[i: i + self.filters_size[0], ii: ii + self.filters_size[1],
                                             layer % 3] * sigma[i, ii, layer]
         self.add_updates(filters=weights, biases=sigma)
 
@@ -143,7 +143,7 @@ class FullConectionLayer:
         input_data = input_data.ravel()
         if 1 == len(input_data.shape):
             input_data = input_data.reshape(input_data.shape + (self.weights.shape[0],))
-        z = np.dot(input_data, self.weights) + np.sum(self.biases)
+        z = np.dot(self.weights, input_data) + np.sum(self.biases)
         return Result(self.activation_function(z), z)
 
     def get_weights(self):
@@ -163,7 +163,7 @@ class FullConectionLayer:
         if self.debug:
             print("Full connection layer. Add updates function")
         self.weights_updates += weights
-        self.biases_updates += biases
+        self.biases_updates += biases.reshape(self.biases_updates.shape)
 
     def set_debug(self):
         self.debug = True

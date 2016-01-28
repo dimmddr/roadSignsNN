@@ -98,11 +98,8 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False, de
         alfa = alf
         nn.init(alfa_=alfa, seed=123, debug=debug)
         train_set = train_set_complete['Filename'][0:ind]
-        lbl_train = (train_set_complete['Upper_left_corner_X'][0:ind],
-                     train_set_complete['Upper_left_corner_Y'][0:ind],
-                     train_set_complete['Lower_right_corner_X'][0:ind],
-                     train_set_complete['Lower_right_corner_Y'][0:ind]
-                     )
+        lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
+                                         'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
 
         print("Learn")
         for i in range(ind):
