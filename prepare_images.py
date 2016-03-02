@@ -3,16 +3,36 @@ import numpy as np
 
 IMG_WIDTH = 1025
 IMG_HEIGHT = 523
+IMG_LAYERS = 3
+
+SUB_IMG_WIDTH = 48
+SUB_IMG_HEIGHT = 48
+SUB_IMG_LAYERS = 3
 
 
-def prepare(path_to_img):
-    img = cv2.imread(path_to_img, cv2.IMREAD_UNCHANGED)
-    res = cv2.copyMakeBorder(src=img,
-                             top=0, left=0, bottom=IMG_HEIGHT - img.shape[0], right=IMG_WIDTH - img.shape[1],
-                             borderType=cv2.BORDER_CONSTANT, value=0)
-    m = np.mean(res)
-    std = np.std(res)
-    res = (res - m) / std
+def split_into_subimgs(img, sub_img_shape, result_array, step=1):
+    index = 0
+    for i in range(0, img.shape[0] - sub_img_shape[0], step):
+        for ii in range(0, img.shape[1] - sub_img_shape[1], step):
+            result_array[index] = img[i:sub_img_shape[0], ii:sub_img_shape[1], :]
+            index += 1
+
+
+def prepare(img_path):
+    step = 2
+    res = np.zeros(
+        shape=(
+            (IMG_WIDTH - SUB_IMG_WIDTH + 1) / step * (IMG_HEIGHT - SUB_IMG_HEIGHT + 1) / step,
+            SUB_IMG_HEIGHT, SUB_IMG_WIDTH, SUB_IMG_LAYERS),
+        dtype=np.dtype(float))
+    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+    res_img = cv2.copyMakeBorder(src=img,
+                                 top=0, left=0, bottom=IMG_HEIGHT - img.shape[0], right=IMG_WIDTH - img.shape[1],
+                                 borderType=cv2.BORDER_CONSTANT, value=0)
+    res_img /= 256
+    split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_HEIGHT, SUB_IMG_WIDTH, SUB_IMG_LAYERS),
+                       result_array=res, step=step)
+
     return res
 
 # x1 = image_data['Upper_left_corner_X'][0]

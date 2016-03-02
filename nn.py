@@ -18,7 +18,11 @@ SUB_IMG_HEIGHT = 12
 SUB_IMG_LAYERS = 3
 
 
-def go(input, batch_size=500, filter_numbers=10, learning_rate=1, random_state=42):
+def go(datasets, batch_size=500, filter_numbers=10, learning_rate=1, random_state=42):
+    train_set_x, train_set_y = datasets[0]
+    valid_set_x, valid_set_y = datasets[1]
+    test_set_x, test_set_y = datasets[2]
+
     # allocate symbolic variables for the data
     index = T.lscalar()  # index to a [mini]batch
 

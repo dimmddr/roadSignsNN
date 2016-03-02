@@ -14,10 +14,6 @@ import prepare_images
 # а значит он без осложнений пройдет через pooling layer, где я беру максимум из 2х2 квадрата
 # TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
 # TODO: Реализовать обучение сверточного слоя
-# TODO: Реализовать систему изменения весов
-# TODO: Добавить возможность задавать количество обучающих примеров через которые изменяются веса
-# TODO: Придумать как определять правильность предположений первой нейросети в каскаде
-# TODO: ПРидумать или найти готовое решение как научить нейросеть масштабировать окно локации объекта
 
 
 dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
@@ -85,7 +81,7 @@ def write_results(result: list, test_name):
 
 
 # test for train speed
-def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False, debug=False):
+def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10, init=False):
     # I don't want to do it multiply times, read large file is long.
     if not init:
         test_init()
@@ -96,15 +92,17 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False, de
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
-        nn.init(alfa_=alfa, seed=123, debug=debug)
+        nn.init(alfa_=alfa, seed=123)
         train_set = train_set_complete['Filename'][0:ind]
         lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
 
         print("Learn")
-        for i in range(ind):
-            img = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'))
-            nn.learning(x_in=img, lbl_in=lbl_train[i])
+        # for i in range(0, ind, batch_size):
+        #     img = prepare_images.prepare(dataset_path, train_set[i].decode('utf8'))
+        #     nn.learning(x_in=img, lbl_in=lbl_train[i])
+        imgs = prepare_images.prepare(dataset_path, train_set[:batch_size])
+        nn.learning(x_in=imgs, lbl_in=lbl_train[i])
 
         print("Predict")
         # predict_res = []
