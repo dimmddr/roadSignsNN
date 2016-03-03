@@ -4,7 +4,7 @@ import numpy
 import theano
 from theano import tensor as T
 
-import network
+import layers
 
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
 debug_mode = False
@@ -44,7 +44,7 @@ class Network(object):
         # filtering reduces the image size to (12-5+1 , 12-5+1) = (8, 8)
         # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
         # 4D output tensor is thus of shape (batch_size, filter_numbers, 4, 4)
-        self.layer0 = network.ConvPoolLayer(
+        self.layer0 = layers.ConvPoolLayer(
             self.rng,
             input=layer0_input,
             image_shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
@@ -59,7 +59,7 @@ class Network(object):
         layer1_input = self.layer0.output.flatten(2)
 
         # construct a fully-connected sigmoidal layer
-        self.layer1 = network.HiddenLayer(
+        self.layer1 = layers.HiddenLayer(
             self.rng,
             input=layer1_input,
             n_in=3 * 4 * 4,
@@ -69,7 +69,7 @@ class Network(object):
 
         # classify the values of the fully-connected sigmoidal layer
         # TODO: Найти способ сделать выход не 2, а 1, у меня все-таки бинарная классификация, с ней это получится
-        self.layer2 = network.LogisticRegression(input=self.layer1.output, n_in=500, n_out=2)
+        self.layer2 = layers.LogisticRegression(input=self.layer1.output, n_in=500, n_out=2)
 
         # the cost we minimize during training is the NLL of the model
         self.cost = self.layer2.negative_log_likelihood(self.y)
