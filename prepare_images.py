@@ -10,7 +10,7 @@ SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
 
 
-def split_into_subimgs(img, sub_img_shape, result_array, step=1):
+def split_into_subimgs(img, sub_img_shape, result_array, lbl_array, step=1):
     index = 0
     for i in range(0, img.shape[0] - sub_img_shape[0], step):
         for ii in range(0, img.shape[1] - sub_img_shape[1], step):
@@ -18,20 +18,21 @@ def split_into_subimgs(img, sub_img_shape, result_array, step=1):
             index += 1
 
 
-def prepare(img_path):
+def prepare(img_path, lbl):
     step = 2
     res = np.zeros(
         shape=(
             (IMG_WIDTH - SUB_IMG_WIDTH + 1) / step * (IMG_HEIGHT - SUB_IMG_HEIGHT + 1) / step,
             SUB_IMG_HEIGHT, SUB_IMG_WIDTH, SUB_IMG_LAYERS),
         dtype=np.dtype(float))
+    lbl_res = np.zeros(shape=((IMG_WIDTH - SUB_IMG_WIDTH + 1) / step * (IMG_HEIGHT - SUB_IMG_HEIGHT + 1) / step,))
     img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
     res_img = cv2.copyMakeBorder(src=img,
                                  top=0, left=0, bottom=IMG_HEIGHT - img.shape[0], right=IMG_WIDTH - img.shape[1],
                                  borderType=cv2.BORDER_CONSTANT, value=0)
     res_img /= 256
     split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_HEIGHT, SUB_IMG_WIDTH, SUB_IMG_LAYERS),
-                       result_array=res, step=step)
+                       result_array=res, lbl_array=lbl_res, step=step)
 
     return res
 

@@ -99,8 +99,8 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10,
 
         print("Learn")
         for i in range(0, ind, batch_size):
-            img = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'))
-            nn.learning(x_in=img, lbl_in=lbl_train[i])
+            imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
+            nn.learning(x_in=imgs, lbl_in=lbls)
 
         print("Predict")
         # predict_res = []
