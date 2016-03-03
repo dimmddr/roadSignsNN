@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 
+from nn import Rectangle
+
 IMG_WIDTH = 1025
 IMG_HEIGHT = 523
 IMG_LAYERS = 3
@@ -8,13 +10,25 @@ IMG_LAYERS = 3
 SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
+COVER_PERCENT = 0.6
 
 
-def split_into_subimgs(img, sub_img_shape, result_array, lbl_array, step=1):
+def compute_covering(window, label):
+    dx = min(window.xmax, label.xmax) - max(window.xmin, label.xmin)
+    dy = min(window.ymax, label.ymax) - max(window.ymin, label.ymin)
+    if (dx >= 0) and (dy >= 0):
+        return dx * dy / ((label.xmax - label.xmin) * (label.ymax - label.ymin))
+    else:
+        return 0
+
+
+def split_into_subimgs(img, lbl, sub_img_shape, result_array, lbl_array, step=1):
     index = 0
     for i in range(0, img.shape[0] - sub_img_shape[0], step):
         for ii in range(0, img.shape[1] - sub_img_shape[1], step):
             result_array[index] = img[i:sub_img_shape[0], ii:sub_img_shape[1], :]
+            lbl_array[index] = int(compute_covering(Rectangle(i, ii, i + sub_img_shape[0], ii + sub_img_shape[1]),
+                                                    Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) > COVER_PERCENT)
             index += 1
 
 
@@ -34,7 +48,7 @@ def prepare(img_path, lbl):
     split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_HEIGHT, SUB_IMG_WIDTH, SUB_IMG_LAYERS),
                        result_array=res, lbl_array=lbl_res, step=step)
 
-    return res
+    return res, lbl_res
 
 # x1 = image_data['Upper_left_corner_X'][0]
 # x2 = image_data['Lower_right_corner_X'][0]
