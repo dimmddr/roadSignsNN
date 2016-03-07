@@ -44,9 +44,9 @@ def prepare(img_path, lbl):
     res_img = cv2.copyMakeBorder(src=img,
                                  top=0, left=0, bottom=IMG_HEIGHT - img.shape[0], right=IMG_WIDTH - img.shape[1],
                                  borderType=cv2.BORDER_CONSTANT, value=0)
-    res_img /= 256
+    res_img = cv2.normalize(res_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_HEIGHT, SUB_IMG_WIDTH, SUB_IMG_LAYERS),
-                       result_array=res, lbl_array=lbl_res, step=step)
+                       result_array=res, lbl=lbl, lbl_array=lbl_res, step=step)
 
     return res, lbl_res
 

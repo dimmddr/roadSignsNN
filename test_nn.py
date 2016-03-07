@@ -92,7 +92,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10,
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
-        nn.init(alfa_=alfa, seed=123)
+        net = nn.Network(learning_rate=alfa, random_state=123)
         train_set = train_set_complete['Filename'][0:ind]
         lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
@@ -100,7 +100,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10,
         print("Learn")
         for i in range(0, ind, batch_size):
             imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            nn.learning(x_in=imgs, lbl_in=lbls)
+            net.learning(dataset=imgs, labels=lbls)
 
         print("Predict")
         # predict_res = []

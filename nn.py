@@ -137,7 +137,9 @@ class Network(object):
             for param_i, grad_i in zip(self.params, self.grads)
             ]
 
-    def learning(self, datasets, n_epochs=200):
+    def learning(self, dataset, labels, n_epochs=200):
+
+        datasets = prepare_dataset(dataset, labels)
 
         train_set_x, train_set_y = datasets[0]
         valid_set_x, valid_set_y = datasets[1]
