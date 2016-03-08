@@ -53,8 +53,8 @@ def prepare_dataset(dataset, lbls):
         # lets ous get around this issue
         return shared_x, T.cast(shared_y, 'int32')
 
-    train_set_x, tmp_x, train_set_y, tmp_y = train_test_split(dataset, lbls, 0.8)
-    valid_set_x, test_set_x, valid_set_y, test_set_y = train_test_split(tmp_x, tmp_y, 0.5)
+    train_set_x, tmp_x, train_set_y, tmp_y = train_test_split(dataset, lbls, test_size=0.2)
+    valid_set_x, test_set_x, valid_set_y, test_set_y = train_test_split(tmp_x, tmp_y, test_size=0.5)
 
     test_set_x, test_set_y = shared_dataset(test_set_x, test_set_y)
     valid_set_x, valid_set_y = shared_dataset(valid_set_x, valid_set_y)
