@@ -67,6 +67,7 @@ def prepare_dataset(dataset, lbls):
 
 class Network(object):
     def __init__(self, batch_size=500, filter_numbers=10, learning_rate=1, random_state=42):
+        self.pattern_12_to_48 = numpy.array([[] for i in range(3)])
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
 
@@ -137,10 +138,7 @@ class Network(object):
             for param_i, grad_i in zip(self.params, self.grads)
             ]
 
-    def learning(self, dataset, labels, n_epochs=200):
-
-        datasets = prepare_dataset(dataset, labels)
-
+    def one_cycle(self, datasets, n_epochs):
         train_set_x, train_set_y = datasets[0]
         valid_set_x, valid_set_y = datasets[1]
         test_set_x, test_set_y = datasets[2]
@@ -156,8 +154,9 @@ class Network(object):
         # Full image size = (3, 523, 1025)
         # "Break" full image into subimages of size = (3, 48, 48) where only every 4th columns and 4th rows counts,
         # others pixels throw away for now. So, essentially there is image with size = (3, 12, 12)
-        # With subimages window step = 1 pixel we have 1396584 subimages and that quite a much, so i decide did step = 2
-        # with step = 2 for rows and column we will have 1396584 / 4 = 349146 subimages. I will try if that's few enough
+        # With subimages window step = 1 pixel we have 1396584 subimages and that quite a much, so i decide did
+        # step = 2 with step = 2 for rows and column we will have 1396584 / 4 = 349146 subimages.
+        # I will try if that's few enough
 
         # create a function to compute the mistakes that are made by the model
         test_model = theano.function(
@@ -266,3 +265,14 @@ class Network(object):
         print(('The code for file ' +
                os.path.split(__file__)[1] +
                ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
+
+    def learning(self, dataset, labels, n_epochs=200):
+        size = 1000
+        for i in range(1):
+            # for i in range(dataset.shape[0] // size):
+            datasets = prepare_dataset(dataset[i * size: i * size + size, :, :, :], labels[i * size: i * size + size])
+            self.one_cycle(datasets, n_epochs)
+            # datasets = prepare_dataset(
+            #     dataset[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size, :, :, :],
+            #     labels[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size])
+            # self.one_cycle(datasets, n_epochs)
