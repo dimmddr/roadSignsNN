@@ -71,7 +71,7 @@ class Network(object):
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
 
-        self.x = T.matrix('x')  # the data is presented as rasterized images
+        self.x = T.tensor4('x')  # the data is presented as rasterized images
         self.y = T.ivector('y')  # the labels are presented as 1D vector of
         # [int] labels
 
