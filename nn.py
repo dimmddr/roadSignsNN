@@ -124,7 +124,7 @@ class Network(object):
         self.cost = self.layer2.negative_log_likelihood(self.y)
 
         # create a list of all model parameters to be fit by gradient descent
-        self.params = self.layer2.params + self.layer2.params + self.layer1.params + self.layer0.params
+        self.params = self.layer2.params + self.layer1.params + self.layer0.params
 
         # create a list of gradients for all model parameters
         self.grads = T.grad(self.cost, self.params)
