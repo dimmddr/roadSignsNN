@@ -135,7 +135,8 @@ class Network(object):
 
     def convert48to12(self, dataset):
         ArrShape = namedtuple('ArrShape', ['number_of_items', 'width', 'height', 'number_of_layers'])
-        input_shape = ArrShape(dataset.shape)
+        input_shape = ArrShape(number_of_items=dataset.shape[0], width=dataset.shape[1],
+                               height=dataset.shape[2], number_of_layers=dataset.shape[3])
         res = numpy.empty(
             shape=(input_shape.number_of_items, SUB_IMG_WIDTH, SUB_IMG_HEIGHT, input_shape.number_of_layers))
         for i in range(dataset.shape[0]):
