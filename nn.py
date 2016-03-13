@@ -65,9 +65,13 @@ def prepare_dataset(dataset, lbls):
     return rval
 
 
+# TODO: Избавиться от магических чисел
 class Network(object):
     def __init__(self, batch_size=500, filter_numbers=10, learning_rate=1, random_state=42):
-        self.pattern_12_to_48 = numpy.array([[] for i in range(3)])
+        full = [1 if i % 4 == 0 else 0 for i in range(48)]
+        empty = [0 for i in range(48)]
+        self.pattern_48_to_12 = numpy.array(
+            [[full if i % 4 == 0 else empty for i in range(48)] for i in range(IMG_LAYERS)])
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
 
@@ -77,6 +81,7 @@ class Network(object):
 
         self.rng = numpy.random.RandomState(random_state)
         self.batch_size = batch_size
+        self.learning_rate = learning_rate
 
         ######################
         # BUILD ACTUAL MODEL #
@@ -128,15 +133,14 @@ class Network(object):
         # create a list of gradients for all model parameters
         self.grads = T.grad(self.cost, self.params)
 
-        # train_model is a function that updates the model parameters by
-        # SGD Since this model has many parameters, it would be tedious to
-        # manually create an update rule for each model parameter. We thus
-        # create the updates list by automatically looping over all
-        # (params[i], grads[i]) pairs.
-        self.updates = [
-            (param_i, param_i - learning_rate * grad_i)
-            for param_i, grad_i in zip(self.params, self.grads)
-            ]
+    def convert48to12(self, dataset):
+        ArrShape = namedtuple('ArrShape', ['number_of_items', 'width', 'height', 'number_of_layers'])
+        input_shape = ArrShape(dataset.shape)
+        res = numpy.empty(
+            shape=(input_shape.number_of_items, SUB_IMG_WIDTH, SUB_IMG_HEIGHT, input_shape.number_of_layers))
+        for i in range(dataset.shape[0]):
+            res[i] = dataset[i][self.pattern_48_to_12]
+        return res
 
     def one_cycle(self, datasets, n_epochs):
         train_set_x, train_set_y = datasets[0]
@@ -176,11 +180,20 @@ class Network(object):
                 self.y: valid_set_y[self.index * self.batch_size: (self.index + 1) * self.batch_size]
             }
         )
+        # train_model is a function that updates the model parameters by
+        # SGD Since this model has many parameters, it would be tedious to
+        # manually create an update rule for each model parameter. We thus
+        # create the updates list by automatically looping over all
+        # (params[i], grads[i]) pairs.
+        updates = [
+            (param_i, param_i - self.learning_rate * grad_i)
+            for param_i, grad_i in zip(self.params, self.grads)
+            ]
 
         train_model = theano.function(
             [self.index],
             self.cost,
-            updates=self.updates,
+            updates=updates,
             givens={
                 self.x: train_set_x[self.index * self.batch_size: (self.index + 1) * self.batch_size],
                 self.y: train_set_y[self.index * self.batch_size: (self.index + 1) * self.batch_size]
@@ -267,10 +280,14 @@ class Network(object):
                ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
 
     def learning(self, dataset, labels, n_epochs=200):
+        print(dataset.shape)
+        dataset_first = self.convert48to12(dataset)
+        print(dataset_first.shape)
         size = 1000
         for i in range(1):
             # for i in range(dataset.shape[0] // size):
-            datasets = prepare_dataset(dataset[i * size: i * size + size, :, :, :], labels[i * size: i * size + size])
+            datasets = prepare_dataset(dataset_first[i * size: i * size + size, :, :, :],
+                                       labels[i * size: i * size + size])
             self.one_cycle(datasets, n_epochs)
             # datasets = prepare_dataset(
             #     dataset[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size, :, :, :],
