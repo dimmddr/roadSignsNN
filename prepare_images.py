@@ -35,6 +35,7 @@ def split_into_subimgs(img, lbl, sub_img_shape, result_array, lbl_array, step=1)
 
 
 def prepare(img_path, lbl):
+    print("Prepare image " + img_path)
     step = 2
     lbl_res = np.zeros(shape=((IMG_WIDTH - SUB_IMG_WIDTH + 1) / step * (IMG_HEIGHT - SUB_IMG_HEIGHT + 1) / step,))
     img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)

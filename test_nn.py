@@ -97,12 +97,10 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10,
         lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
 
-        print("Learn")
         for i in range(0, ind, batch_size):
             imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
             net.learning(dataset=imgs, labels=lbls)
 
-        print("Predict")
         # predict_res = []
         # for test in test_set:
         #     predict_res.append(nn.predict(test))
@@ -123,3 +121,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10,
 def test_all():
     print("Test learning speed")
     test_learning_speed(0.5, 3, 0.5, init=True)
+
+
+if __name__ == '__main__':
+    test_learning_speed()

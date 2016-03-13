@@ -294,3 +294,4 @@ class Network(object):
             #     dataset[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size, :, :, :],
             #     labels[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size])
             # self.one_cycle(datasets, n_epochs)
+
