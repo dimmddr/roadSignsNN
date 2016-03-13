@@ -68,10 +68,6 @@ def prepare_dataset(dataset, lbls):
 # TODO: Избавиться от магических чисел
 class Network(object):
     def __init__(self, batch_size=500, filter_numbers=10, learning_rate=1, random_state=42):
-        full = [1 if i % 4 == 0 else 0 for i in range(48)]
-        empty = [0 for i in range(48)]
-        self.pattern_48_to_12 = numpy.array(
-            [[full if i % 4 == 0 else empty for i in range(48)] for i in range(IMG_LAYERS)])
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
 
@@ -134,14 +130,7 @@ class Network(object):
         self.grads = T.grad(self.cost, self.params)
 
     def convert48to12(self, dataset):
-        ArrShape = namedtuple('ArrShape', ['number_of_items', 'width', 'height', 'number_of_layers'])
-        input_shape = ArrShape(number_of_items=dataset.shape[0], width=dataset.shape[1],
-                               height=dataset.shape[2], number_of_layers=dataset.shape[3])
-        res = numpy.empty(
-            shape=(input_shape.number_of_items, SUB_IMG_WIDTH, SUB_IMG_HEIGHT, input_shape.number_of_layers))
-        for i in range(dataset.shape[0]):
-            res[i] = dataset[i][self.pattern_48_to_12]
-        return res
+        return dataset[:, :, 1::4, 1::4]
 
     def one_cycle(self, datasets, n_epochs):
         train_set_x, train_set_y = datasets[0]
