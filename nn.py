@@ -86,7 +86,6 @@ class Network(object):
 
         # Reshape matrix of rasterized images of shape (batch_size, 3, 12 * 12)
         # to a 4D tensor, compatible with our LeNetConvPoolLayer
-        # (28, 28) is the size of MNIST images.
         layer0_input = self.x.reshape((batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH))
 
         # Construct the first convolutional pooling layer:
@@ -111,7 +110,7 @@ class Network(object):
         self.layer1 = layers.HiddenLayer(
             self.rng,
             input=layer1_input,
-            n_in=3 * 4 * 4,
+            n_in=10 * 4 * 4,
             n_out=500,
             activation=T.tanh
         )
@@ -144,13 +143,16 @@ class Network(object):
         n_train_batches //= self.batch_size
         n_valid_batches //= self.batch_size
         n_test_batches //= self.batch_size
-
+        print("n_train_batches, n_valid_batches, n_test_batches")
+        print(n_train_batches, n_valid_batches, n_test_batches)
+        print("self.index")
+        print(self.index)
         # Full image size = (3, 523, 1025)
         # "Break" full image into subimages of size = (3, 48, 48) where only every 4th columns and 4th rows counts,
         # others pixels throw away for now. So, essentially there is image with size = (3, 12, 12)
         # With subimages window step = 1 pixel we have 1396584 subimages and that quite a much, so i decide did
         # step = 2 with step = 2 for rows and column we will have 1396584 / 4 = 349146 subimages.
-        # I will try if that's few enough
+        # I will check if that's few enough
 
         # create a function to compute the mistakes that are made by the model
         test_model = theano.function(
