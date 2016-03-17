@@ -81,13 +81,13 @@ def write_results(result: list, test_name):
 
 
 # test for train speed
-def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10, init=False):
+def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
     # I don't want to do it multiply times, read large file is long.
     if not init:
         test_init()
 
     res = []
-    # ind = np.floor(len(train_set_complete) * 0.75)
+    # ind = int(np.floor(len(train_set_complete) * 0.75))
     ind = 1
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
@@ -97,7 +97,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., batch_size=10,
         lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
 
-        for i in range(0, ind, batch_size):
+        for i in range(0, ind):
             imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
             net.learning(dataset=imgs, labels=lbls)
 
