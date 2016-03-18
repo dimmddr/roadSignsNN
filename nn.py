@@ -206,13 +206,20 @@ class Network(object):
 
     def save_params(self):
         save_file = open('params', 'wb')
-        pickle.dump(self.layer0.params, save_file, -1)
-        pickle.dump(self.layer1.params, save_file, -1)
-        pickle.dump(self.layer2.params, save_file, -1)
+        pickle.dump(self.layer0.W, save_file, -1)
+        pickle.dump(self.layer0.b, save_file, -1)
+        pickle.dump(self.layer1.W, save_file, -1)
+        pickle.dump(self.layer1.b, save_file, -1)
+        pickle.dump(self.layer2.W, save_file, -1)
+        pickle.dump(self.layer2.b, save_file, -1)
         save_file.close()
 
     def load_params(self):
-        save_file = open('params')
-        self.layer0.params = pickle.load(save_file)
-        self.layer1.params = pickle.load(save_file)
-        self.layer2.params = pickle.load(save_file)
+        save_file = open('params', 'rb')
+        self.layer0.W = pickle.load(save_file)
+        self.layer0.b = pickle.load(save_file)
+        self.layer1.W = pickle.load(save_file)
+        self.layer1.b = pickle.load(save_file)
+        self.layer2.W = pickle.load(save_file)
+        self.layer2.b = pickle.load(save_file)
+        save_file.close()
