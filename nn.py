@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import timeit
 from collections import namedtuple
@@ -21,14 +22,15 @@ SUB_IMG_HEIGHT = 12
 SUB_IMG_LAYERS = 3
 
 
-def prepare_dataset(dataset, lbls):
+def prepare_dataset(dataset, lbls=None):
     """ Prepare the dataset
     :param dataset: numpy 4D array with shape (images_number, image_height, image_width, image_layers)
     :param lbls: labels for images in [0, 1]
+    :return tuple of theano.shared if lbls is not None, otherwise return single theano.shared
     """
 
     # noinspection PyIncorrectDocstring
-    def shared_dataset(data_x, data_y, borrow=True):
+    def shared_dataset(data_x, data_y=None, borrow=True):
         """ Function that loads the dataset into shared variables
 
         The reason we store our dataset in shared variables is to allow
@@ -40,21 +42,26 @@ def prepare_dataset(dataset, lbls):
         shared_x = theano.shared(numpy.asarray(data_x,
                                                dtype=theano.config.floatX),
                                  borrow=borrow)
-        shared_y = theano.shared(numpy.asarray(data_y,
-                                               dtype=theano.config.floatX),
-                                 borrow=borrow)
-        # When storing data on the GPU it has to be stored as floats
-        # therefore we will store the labels as ``floatX`` as well
-        # (``shared_y`` does exactly that). But during our computations
-        # we need them as ints (we use labels as index, and if they are
-        # floats it doesn't make sense) therefore instead of returning
-        # ``shared_y`` we will have to cast it to int. This little hack
-        # lets ous get around this issue
-        return shared_x, T.cast(shared_y, 'int32')
+        if data_y is not None:
+            shared_y = theano.shared(numpy.asarray(data_y,
+                                                   dtype=theano.config.floatX),
+                                     borrow=borrow)
+            # When storing data on the GPU it has to be stored as floats
+            # therefore we will store the labels as ``floatX`` as well
+            # (``shared_y`` does exactly that). But during our computations
+            # we need them as ints (we use labels as index, and if they are
+            # floats it doesn't make sense) therefore instead of returning
+            # ``shared_y`` we will have to cast it to int. This little hack
+            # lets ous get around this issue
+            return shared_x, T.cast(shared_y, 'int32')
+        return shared_x, None
 
     train_set_x, train_set_y = shared_dataset(dataset, lbls)
 
-    rval = (train_set_x, train_set_y)
+    if train_set_y is not None:
+        rval = (train_set_x, train_set_y)
+    else:
+        rval = train_set_x
     return rval
 
 
@@ -124,7 +131,7 @@ class Network(object):
     def convert48to12(self, dataset):
         return dataset[:, :, 1::4, 1::4]
 
-    def one_cycle(self, datasets, n_epochs):
+    def one_cycle(self, datasets):
         train_set_x, train_set_y = datasets
 
         # Full image size = (3, 523, 1025)
@@ -169,17 +176,43 @@ class Network(object):
                ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
 
     def learning(self, dataset, labels, n_epochs=200):
-        print(dataset.shape)
         dataset_first = self.convert48to12(dataset)
-        print(dataset_first.shape)
         size = 1000
-        for i in range(1):
-            # for i in range(dataset.shape[0] // size):
+        for i in range(dataset.shape[0] // size):
             datasets = prepare_dataset(dataset_first[i * size: i * size + size, :, :, :],
                                        labels[i * size: i * size + size])
-            self.one_cycle(datasets, n_epochs)
+            self.one_cycle(datasets)
             # datasets = prepare_dataset(
             #     dataset[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size, :, :, :],
             #     labels[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size])
             # self.one_cycle(datasets, n_epochs)
 
+    def predict(self, dataset):
+        dataset_first = self.convert48to12(dataset)
+        size = 1000
+        data = T.tensor4
+        pred = theano.function(
+            [data],
+            givens={
+                self.x: data
+            },
+            outputs=self.layer2.y_pred
+        )
+        res = numpy.zeros(dataset.shape[0])
+        for i in range(dataset.shape[0] // size):
+            datasets = prepare_dataset(dataset_first[i * size: i * size + size, :, :, :])
+            res[i * size: i * size + size] = pred(datasets)
+        return res
+
+    def save_params(self):
+        save_file = open('params', 'wb')
+        pickle.dump(self.layer0.params, save_file, -1)
+        pickle.dump(self.layer1.params, save_file, -1)
+        pickle.dump(self.layer2.params, save_file, -1)
+        save_file.close()
+
+    def load_params(self):
+        save_file = open('params')
+        self.layer0.params = pickle.load(save_file)
+        self.layer1.params = pickle.load(save_file)
+        self.layer2.params = pickle.load(save_file)
