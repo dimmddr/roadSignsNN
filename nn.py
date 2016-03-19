@@ -189,19 +189,15 @@ class Network(object):
 
     def predict(self, dataset):
         dataset_first = self.convert48to12(dataset)
-        size = 1000
-        data = T.tensor4
+        size = 500
         pred = theano.function(
-            [data],
-            givens={
-                self.x: data
-            },
+            inputs=[self.layer0.input],
             outputs=self.layer2.y_pred
         )
         res = numpy.zeros(dataset.shape[0])
         for i in range(dataset.shape[0] // size):
-            datasets = prepare_dataset(dataset_first[i * size: i * size + size, :, :, :])
-            res[i * size: i * size + size] = pred(datasets)
+            # datasets = prepare_dataset()
+            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
         return res
 
     def save_params(self):
