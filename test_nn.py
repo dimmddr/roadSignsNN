@@ -114,7 +114,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         fp = np.sum(tmp == -1)
         fn = np.sum(tmp == 1)
         print("Accuracy = {}".format(tptn / lbls.shape[0] * 100))
-        print("True positive + true negative = {}, false positive = {}, false negative = {}", format(tptn, fp, fn))
+        print("True positive + true negative = {}, false positive = {}, false negative = {}".format(tptn, fp, fn))
 
         # predict_res = []
         # for test in test_set:
