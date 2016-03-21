@@ -39,7 +39,6 @@ def split_into_subimgs(img, lbl, sub_img_shape, result_array, lbl_array, step=1)
 def prepare(img_path, lbl):
     print("Prepare image " + img_path)
     step = 2
-    lbl_res = np.zeros(shape=((IMG_WIDTH - SUB_IMG_WIDTH + 1) / step * (IMG_HEIGHT - SUB_IMG_HEIGHT + 1) / step,))
     img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
     res_img = cv2.normalize(img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
@@ -48,6 +47,7 @@ def prepare(img_path, lbl):
             (res_img.shape[WIDTH] - SUB_IMG_WIDTH + 1) / step * (res_img.shape[HEIGHT] - SUB_IMG_HEIGHT + 1) / step,
             SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
         dtype=np.dtype(float))
+    lbl_res = np.zeros(shape=(res.shape[0],))
     split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
                        result_array=res, lbl=lbl, lbl_array=lbl_res, step=step)
 

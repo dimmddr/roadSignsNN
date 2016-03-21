@@ -93,21 +93,21 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         print(alf)
         alfa = alf
         net = nn.Network(learning_rate=alfa, random_state=123)
-        # train_set = train_set_complete['Filename'][0:ind]
-        # lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
-        #                                  'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
-        #
-        # for i in range(0, ind):
-        #     imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-        #     net.learning(dataset=imgs, labels=lbls)
+        train_set = train_set_complete['Filename'][0:ind]
+        lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
+                                         'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
+
+        for i in range(0, ind):
+            imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
+            net.learning(dataset=imgs, labels=lbls)
 
         net.save_params()
         net.load_params()
 
         test_img = train_set_complete['Filename'][ind + 1:ind + 2]
-        lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
+        lbl_test = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
-        imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_train[0])
+        imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
         y_pred = net.predict(imgs)
         tmp = lbls - y_pred
         tptn = lbls.shape[0] - np.count_nonzero(tmp)
