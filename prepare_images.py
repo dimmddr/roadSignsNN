@@ -42,38 +42,10 @@ def prepare(img_path, lbl):
     img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
     res_img = cv2.normalize(img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
-    res = np.zeros(
-        shape=(
-            (res_img.shape[WIDTH] - SUB_IMG_WIDTH + 1) / step * (res_img.shape[HEIGHT] - SUB_IMG_HEIGHT + 1) / step,
-            SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-        dtype=np.dtype(float))
-    lbl_res = np.zeros(shape=(res.shape[0],))
+    res = []
+    lbl_res = np.zeros(shape=int(
+        (res_img.shape[WIDTH] - SUB_IMG_WIDTH + 1) / step * (res_img.shape[HEIGHT] - SUB_IMG_HEIGHT + 1) / step))
     split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
                        result_array=res, lbl=lbl, lbl_array=lbl_res, step=step)
 
     return res, lbl_res
-
-# x1 = image_data['Upper_left_corner_X'][0]
-# x2 = image_data['Lower_right_corner_X'][0]
-# y1 = image_data['Upper_left_corner_Y'][0]
-# y2 = image_data['Lower_right_corner_Y'][0]
-# roi = img[y1:y2, x1:x2]
-# fname = dataset_path + "signs/qwer.png"
-# print(fname)
-# cv2.imwrite(fname, roi)
-# cv2.imshow('image', roi)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
-
-# lengths = train['Lower_right_corner_X'] - train['Upper_left_corner_X']
-# heights = train['Lower_right_corner_Y'] - train['Upper_left_corner_Y']
-# for img_rec in train:
-#     img = cv2.imread(dataset_path + img_rec['Filename'].decode('utf8'), cv2.IMREAD_UNCHANGED)
-#     x1 = train['Upper_left_corner_X'][0]
-#     x2 = train['Lower_right_corner_X'][0]
-#     y1 = train['Upper_left_corner_Y'][0]
-#     y2 = train['Lower_right_corner_Y'][0]
-#     roi = img[y1:y2, x1:x2]
-#     fname = dataset_path + "signs/" + img_rec['Filename'].decode('utf8')
-#     print(fname)
-#     cv2.imwrite(fname, roi)

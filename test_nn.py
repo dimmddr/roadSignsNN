@@ -5,6 +5,7 @@ import timeit
 
 import numpy as np
 import numpy.lib.recfunctions
+from sklearn.utils import shuffle
 
 import nn
 import prepare_images
@@ -23,6 +24,7 @@ negatives_path = dataset_path + "negatives.dat"
 
 def test_init(seed=16):
     global train_set_complete
+    global train_set_without_negatives
     np.random.seed(seed)
 
     # Read data from files
@@ -30,20 +32,11 @@ def test_init(seed=16):
     negatives = np.genfromtxt(negatives_path, dtype=None)
     negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
     train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
+    train_set_without_negatives = image_data
 
     # Get random
     np.random.shuffle(train_set_complete)
-
-
-def test():
-    image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
-    negatives = np.genfromtxt(negatives_path, dtype=None)
-    negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
-    train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
-    # img = prepare_images.prepare(dataset_path + train_set_complete[0]['Filename'].decode('utf8'))
-    res = timeit.timeit(lambda: prepare_images.prepare(dataset_path + train_set_complete[0]['Filename'].decode('utf8')),
-                        number=1000)
-    print(res / 1000)
+    np.random.shuffle(train_set_without_negatives)
 
 
 def write_results(result: list, test_name):
@@ -98,38 +91,35 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
 
         for i in range(0, ind):
-            imgs, lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            net.learning(dataset=imgs, labels=lbls)
+            print(i)
+            all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
+            imgs = all_imgs[all_lbls == 1]
+            lbls = all_lbls[all_lbls == 1]
+            neg_imgs = np.random.choice(all_imgs[all_lbls == 0], imgs.shape[0] * 100, replace=False)
+            # neg_lbls = np.zeros(shape=imgs.shape[0])
+            # imgs = np.concatenate(imgs, neg_imgs)
+            # lbls = np.concatenate(lbls, neg_lbls)
+            # print(imgs.shape)
+            # print(lbls.shape)
+            # imgs, lbls = shuffle(imgs, lbls, random_state=42)
+            # net.learning(dataset=imgs, labels=lbls)
 
-        net.save_params()
-        net.load_params()
+            # net.save_params()
+            # net.load_params()
+            #
+            # print("Testing...")
+            # test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
+            # lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
+            #                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
+            # imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
+            # y_pred = net.predict(imgs)
+            # tmp = lbls - y_pred
+            # tp = np.sum(y_pred == 1 and lbls == 1)
+            # tn = np.sum(y_pred == 0 and lbls == 0)
+            # fp = np.sum(tmp == -1)
+            # fn = np.sum(tmp == 1)
+            # print("True positive = {}, true negative = {}, false positive = {}, false negative = {}".format(tp, tn, fp, fn))
 
-        test_img = train_set_complete['Filename'][ind + 1:ind + 2]
-        lbl_test = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
-                                         'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
-        imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-        y_pred = net.predict(imgs)
-        tmp = lbls - y_pred
-        tptn = lbls.shape[0] - np.count_nonzero(tmp)
-        fp = np.sum(tmp == -1)
-        fn = np.sum(tmp == 1)
-        print("Accuracy = {}".format(tptn / lbls.shape[0] * 100))
-        print("True positive + true negative = {}, false positive = {}, false negative = {}".format(tptn, fp, fn))
-
-        # predict_res = []
-        # for test in test_set:
-        #     predict_res.append(nn.predict(test))
-        # s = sum(predict_res == lbl_test)
-        # proc_n = s / len(lbl_test)
-        # print(proc_n)
-        # res.append({
-        #     'training_size': ind,
-        #     'accuracy': proc_n,
-        #     'learning_speed': alf,
-        #     'hidden_layer_size': hl,
-        #     'time': m_time
-        # })
-    # write_results(res, "training_speed_measurements")
     return res
 
 
