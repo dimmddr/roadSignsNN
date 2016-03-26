@@ -1,11 +1,10 @@
 import csv
 import datetime as dt
 import os
-import timeit
+import random
 
 import numpy as np
 import numpy.lib.recfunctions
-from sklearn.utils import shuffle
 
 import nn
 import prepare_images
@@ -93,16 +92,20 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         for i in range(0, ind):
             print(i)
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            imgs = all_imgs[all_lbls == 1]
+            imgs = [all_imgs[i] for i in range(len(all_imgs)) if all_lbls[i] == 1]
             lbls = all_lbls[all_lbls == 1]
-            neg_imgs = np.random.choice(all_imgs[all_lbls == 0], imgs.shape[0] * 100, replace=False)
-            # neg_lbls = np.zeros(shape=imgs.shape[0])
-            # imgs = np.concatenate(imgs, neg_imgs)
-            # lbls = np.concatenate(lbls, neg_lbls)
+            neg_imgs = [all_imgs[i] for i in range(len(all_imgs)) if all_lbls[i] != 1]
+            random.seed(42)
+            neg_imgs = random.sample(neg_imgs, len(imgs) * 100)  # 100 times more negative subimages then positive
+            neg_lbls = np.zeros(shape=len(imgs))
+            tmp = imgs + neg_imgs
+            lbls = np.concatenate((lbls, neg_lbls))
+            index = random.sample(range(len(tmp)), len(tmp))
+            lbls = lbls[index]
+            imgs = [tmp[i] for i in range(len(tmp))]
             # print(imgs.shape)
             # print(lbls.shape)
-            # imgs, lbls = shuffle(imgs, lbls, random_state=42)
-            # net.learning(dataset=imgs, labels=lbls)
+            net.learning(dataset=imgs, labels=lbls)
 
             # net.save_params()
             # net.load_params()
