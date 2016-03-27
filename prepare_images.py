@@ -13,8 +13,8 @@ SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
 COVER_PERCENT = 0.6
-WIDTH = 1
-HEIGHT = 2
+WIDTH = 2
+HEIGHT = 1
 LAYERS = 0
 
 
@@ -22,7 +22,9 @@ def compute_covering(window, label):
     dx = min(window.xmax, label.xmax) - max(window.xmin, label.xmin)
     dy = min(window.ymax, label.ymax) - max(window.ymin, label.ymin)
     if (dx >= 0) and (dy >= 0):
-        return dx * dy / ((label.xmax - label.xmin) * (label.ymax - label.ymin))
+        label_cover = dx * dy / ((label.xmax - label.xmin) * (label.ymax - label.ymin))
+        window_cover = dx * dy / ((window.xmax - window.xmin) * (window.ymax - window.ymin))
+        return max(label_cover, window_cover)
     else:
         return 0
 
@@ -35,14 +37,16 @@ def split_into_subimgs(img, lbl, sub_img_shape, lbl_array, step=1):
     for i in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
         for ii in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
             # result_array.append(img[:, i:i + sub_img_shape[WIDTH], ii:ii + sub_img_shape[HEIGHT]])
-            lbl_array[index] = int(compute_covering(Rectangle(i, ii, i + sub_img_shape[0], ii + sub_img_shape[1]),
-                                                    Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) > COVER_PERCENT)
+            lbl_array[index] = int(
+                compute_covering(Rectangle(i, ii, i + sub_img_shape[WIDTH], ii + sub_img_shape[HEIGHT]),
+                                 Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) > COVER_PERCENT)
             index += 1
     return result_array
 
 
 def prepare(img_path, lbl):
     print("Prepare image " + img_path)
+    print(lbl)
     step = 2
     img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
     res_img = cv2.normalize(img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)

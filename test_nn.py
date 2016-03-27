@@ -18,6 +18,8 @@ import prepare_images
 dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
 annotation_path = dataset_path + 'allAnnotations.csv'
 negatives_path = dataset_path + "negatives.dat"
+train_set_complete = np.empty(0)
+train_set_without_negatives = np.empty(0)
 
 
 def test_init(seed=16):
@@ -91,11 +93,12 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         for i in range(0, ind):
             print(i)
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            print(all_imgs.shape)
-            print(all_lbls.shape)
+            print(np.sum(all_lbls == 1))
             imgs = all_imgs[all_lbls == 1]
+            print(imgs.shape)
             lbls = all_lbls[all_lbls == 1]
-            neg_imgs = np.random.choice(all_imgs[all_lbls == 0], imgs.shape[0] * 100, replace=False)
+            print(lbls.shape)
+            # neg_imgs = np.random.choice(all_imgs[all_lbls == 0], imgs.shape[0] * 100, replace=False)
             # neg_lbls = np.zeros(shape=imgs.shape[0])
             # imgs = np.concatenate(imgs, neg_imgs)
             # lbls = np.concatenate(lbls, neg_lbls)
