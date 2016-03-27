@@ -28,9 +28,9 @@ def compute_covering(window, label):
 
 
 def split_into_subimgs(img, lbl, sub_img_shape, lbl_array, step=1):
-    result_array = as_strided(img, shape=(
-        (img.shape[WIDTH] - sub_img_shape[WIDTH]) * (img.shape[HEIGHT] - sub_img_shape[HEIGHT]), SUB_IMG_LAYERS,
-        SUB_IMG_HEIGHT, SUB_IMG_WIDTH), strides=(img.strides[2] * step, img.strides[0], img.strides[1], img.strides[2]))
+    shape = (lbl_array.shape[0], SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
+    result_array = as_strided(img, shape=shape,
+                              strides=(img.strides[2] * step, img.strides[0], img.strides[1], img.strides[2]))
     index = 0
     for i in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
         for ii in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
