@@ -21,6 +21,9 @@ negatives_path = dataset_path + "negatives.dat"
 train_set_complete = np.empty(0)
 train_set_without_negatives = np.empty(0)
 
+# TODO: Try different numbers and see how it goes
+NEGATIVE_MULTIPLIER = 40
+
 
 def test_init(seed=16):
     global train_set_complete
@@ -93,18 +96,21 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         for i in range(0, ind):
             print(i)
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            print(np.sum(all_lbls == 1))
+            print("Image prepared")
             imgs = all_imgs[all_lbls == 1]
-            print(imgs.shape)
             lbls = all_lbls[all_lbls == 1]
+            # Set seed before every shuffle for consistent shuffle
+            np.random.seed(42)
+            np.random.shuffle(all_lbls)
+            np.random.seed(42)
+            np.random.shuffle(all_imgs)
+            neg_size = lbls.shape[0] * NEGATIVE_MULTIPLIER
+            neg_lbls = all_lbls[:neg_size]
+            neg_imgs = all_imgs[:neg_size]
+            imgs = np.concatenate((imgs, neg_imgs))
+            lbls = np.concatenate((lbls, neg_lbls))
+            print(imgs.shape)
             print(lbls.shape)
-            # neg_imgs = np.random.choice(all_imgs[all_lbls == 0], imgs.shape[0] * 100, replace=False)
-            # neg_lbls = np.zeros(shape=imgs.shape[0])
-            # imgs = np.concatenate(imgs, neg_imgs)
-            # lbls = np.concatenate(lbls, neg_lbls)
-            # print(imgs.shape)
-            # print(lbls.shape)
-            # imgs, lbls = shuffle(imgs, lbls, random_state=42)
             # net.learning(dataset=imgs, labels=lbls)
 
             # net.save_params()
