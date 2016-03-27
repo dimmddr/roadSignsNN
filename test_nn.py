@@ -84,7 +84,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
 
     res = []
     # ind = int(np.floor(len(train_set_complete) * 0.75))
-    ind = 1
+    ind = 100
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
@@ -111,23 +111,25 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
             lbls = np.concatenate((lbls, neg_lbls))
             print(imgs.shape)
             print(lbls.shape)
-            # net.learning(dataset=imgs, labels=lbls)
+            net.learning(dataset=imgs, labels=lbls)
 
-            # net.save_params()
-            # net.load_params()
-            #
-            # print("Testing...")
-            # test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
-            # lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
-            #                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
-            # imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-            # y_pred = net.predict(imgs)
-            # tmp = lbls - y_pred
-            # tp = np.sum(y_pred == 1 and lbls == 1)
-            # tn = np.sum(y_pred == 0 and lbls == 0)
-            # fp = np.sum(tmp == -1)
-            # fn = np.sum(tmp == 1)
-            # print("True positive = {}, true negative = {}, false positive = {}, false negative = {}".format(tp, tn, fp, fn))
+            net.save_params()
+            net.load_params()
+
+            print("Testing...")
+            test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
+            lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
+                                                     'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
+            imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
+            y_pred = net.predict(imgs)
+            tmp = lbls - y_pred
+
+            tp = np.sum((y_pred == 1) & (lbls == 1))
+            tn = np.sum((y_pred == 0) & (lbls == 0))
+            fp = np.sum(tmp == -1)
+            fn = np.sum(tmp == 1)
+            print("True positive = {}, true negative = {}, false positive = {}, false negative = {}".format(tp, tn, fp,
+                                                                                                            fn))
 
     return res
 
