@@ -4,10 +4,14 @@ from theano import tensor as T
 from theano.tensor.nnet import conv2d
 from theano.tensor.signal import downsample
 
+ACTIVATION_DICT = {
+    "tanh": T.tanh,
+    "relu": T.nnet.relu
+}
 
 class ConvPoolLayer(object):
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2),
-                 activation_function="Tanh", relu_alpha=0):
+    def __init__(self, rng, input, filter_shape, input_shape, poolsize=(2, 2),
+                 activation_function="tanh", relu_alpha=0):
         """
         Allocate a LeNetConvPoolLayer with shared variable internal parameters.
 
@@ -21,8 +25,8 @@ class ConvPoolLayer(object):
         :param filter_shape: (number of filters, num input feature maps,
                               filter height, filter width)
 
-        :type image_shape: tuple or list of length 4
-        :param image_shape: (batch size, num input feature maps,
+        :type input_shape: tuple or list of length 4
+        :param input_shape: (batch size, num input feature maps,
                              image height, image width)
 
         :type poolsize: tuple or list of length 2
@@ -39,7 +43,7 @@ class ConvPoolLayer(object):
             and any value in between will give a leaky rectifier. A shared variable (broadcastable against x) will
             result in a parameterized rectifier with learnable slope(s).
         """
-        assert image_shape[1] == filter_shape[1]
+        assert input_shape[1] == filter_shape[1]
         self.input = input
 
         # there are "num input feature maps * filter height * filter width"
@@ -70,7 +74,7 @@ class ConvPoolLayer(object):
             input=input,
             filters=self.W,
             filter_shape=filter_shape,
-            image_shape=image_shape
+            input_shape=input_shape
         )
 
         # downsample each feature map individually, using maxpooling
@@ -84,11 +88,7 @@ class ConvPoolLayer(object):
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
         # thus be broadcasted across mini-batches and feature map
         # width & height
-        self.activation_dict = {
-            "tanh": T.tanh,
-            "relu": T.nnet.relu
-        }.get("default", T.tanh)
-        activation = self.activation_dict[activation_function]
+        activation = ACTIVATION_DICT[activation_function]
         # Additional parameters if we have relu activation function
         if activation_function == "relu":
             self.output = activation(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'), relu_alpha)
@@ -102,7 +102,6 @@ class ConvPoolLayer(object):
         self.input = input
 
 
-# TODO: check the class, maybe something need to be changed
 class LogisticRegression(object):
     """Multi-class Logistic Regression Class
 
@@ -173,13 +172,6 @@ class LogisticRegression(object):
         """Return the mean of the negative log-likelihood of the prediction
         of this model under a given target distribution.
 
-        .. math::
-
-            \frac{1}{|\mathcal{D}|} \mathcal{L} (\theta=\{W,b\}, \mathcal{D}) =
-            \frac{1}{|\mathcal{D}|} \sum_{i=0}^{|\mathcal{D}|}
-                \log(P(Y=y^{(i)}|x^{(i)}, W,b)) \\
-            \ell (\theta=\{W,b\}, \mathcal{D})
-
         :type y: theano.tensor.TensorType
         :param y: corresponds to a vector that gives for each example the
                   correct label
@@ -198,7 +190,7 @@ class LogisticRegression(object):
         # LP[n-1,y[n-1]]] and T.mean(LP[T.arange(y.shape[0]),y]) is
         # the mean (across minibatch examples) of the elements in v,
         # i.e., the mean log-likelihood across the minibatch.
-        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
+        return -T.mean(T.log(self.p_y_given_x + 0.001)[T.arange(y.shape[0]), y])
         # end-snippet-2
 
     def errors(self, y):
@@ -226,18 +218,14 @@ class LogisticRegression(object):
             raise NotImplementedError()
 
 
-# TODO: check the class, maybe something need to be changed
 class HiddenLayer(object):
     def __init__(self, rng, input, n_in, n_out, W=None, b=None,
-                 activation=T.tanh):
+                 activation_function="tanh", relu_alpha=0):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
         and the bias vector b is of shape (n_out,).
 
-        NOTE : The nonlinearity used here is tanh
-
-        Hidden unit activation is given by: tanh(dot(input,W) + b)
 
         :type rng: numpy.random.RandomState
         :param rng: a random number generator used to initialize weights
@@ -256,7 +244,7 @@ class HiddenLayer(object):
                            layer
         """
         self.input = input
-
+        activation = ACTIVATION_DICT[activation_function]
         # `W` is initialized with `W_values` which is uniformely sampled
         # from sqrt(-6./(n_in+n_hidden)) and sqrt(6./(n_in+n_hidden))
         # for tanh activation function
@@ -291,9 +279,14 @@ class HiddenLayer(object):
         self.b = b
 
         lin_output = T.dot(input, self.W) + self.b
-        self.output = (
-            lin_output if activation is None
-            else activation(lin_output)
-        )
+        if activation_function == "relu":
+            self.output = (
+                activation(lin_output, relu_alpha)
+            )
+        else:
+            self.output = (
+                lin_output if activation is None
+                else activation(lin_output)
+            )
         # parameters of the model
         self.params = [self.W, self.b]

@@ -93,7 +93,7 @@ class Network(object):
         self.layer0 = layers.ConvPoolLayer(
             self.rng,
             input=layer0_input,
-            image_shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+            input_shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
             filter_shape=(filter_numbers, SUB_IMG_LAYERS, 5, 5),
             poolsize=(2, 2),
             activation_function="relu",
@@ -112,7 +112,8 @@ class Network(object):
             input=layer1_input,
             n_in=10 * 4 * 4,
             n_out=500,
-            activation=T.tanh
+            activation_function="relu",
+            relu_alpha=0.1
         )
 
         # classify the values of the fully-connected sigmoidal layer

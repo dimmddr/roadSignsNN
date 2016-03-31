@@ -8,11 +8,7 @@ import numpy.lib.recfunctions
 import nn
 import prepare_images
 
-# Дополнить изображения нулями до 1025х523 (максимальный размер + 1)
-# +1 нужен для того чтобы сделать значения нечетными, тогда после сверточного слоя мы получим массив с четным размером
-# а значит он без осложнений пройдет через pooling layer, где я беру максимум из 2х2 квадрата
 # TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
-# TODO: Реализовать обучение сверточного слоя
 
 
 dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
@@ -84,7 +80,7 @@ def show_some_weights(net):
     print(w.get_value()[0])
     # But not so much biases, so why not
     print("All bias:")
-    print(b)
+    print(b.get_value())
 
 
 def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
