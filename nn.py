@@ -1,6 +1,4 @@
-import os
 import pickle
-import sys
 import timeit
 from collections import namedtuple
 
@@ -97,7 +95,9 @@ class Network(object):
             input=layer0_input,
             image_shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
             filter_shape=(filter_numbers, SUB_IMG_LAYERS, 5, 5),
-            poolsize=(2, 2)
+            poolsize=(2, 2),
+            activation_function="relu",
+            relu_alpha=0.1
         )
 
         # the HiddenLayer being fully-connected, it operates on 2D matrices of
@@ -171,9 +171,9 @@ class Network(object):
         cost_ij = train_model(0)
 
         end_time = timeit.default_timer()
-        print(('The code for file ' +
-               os.path.split(__file__)[1] +
-               ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
+        # print(('The code for file ' +
+        #        os.path.split(__file__)[1] +
+        #        ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
 
     def learning(self, dataset, labels, n_epochs=200):
         dataset_first = self.convert48to12(dataset)

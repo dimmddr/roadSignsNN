@@ -6,7 +6,8 @@ from theano.tensor.signal import downsample
 
 
 class ConvPoolLayer(object):
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2)):
+    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2, 2),
+                 activation_function="Tanh", relu_alpha=0):
         """
         Allocate a LeNetConvPoolLayer with shared variable internal parameters.
 
@@ -26,6 +27,17 @@ class ConvPoolLayer(object):
 
         :type poolsize: tuple or list of length 2
         :param poolsize: the downsampling (pooling) factor (#rows, #cols)
+
+        :type activation: string
+        :param activation: set activation function, can be:
+            "tanh" for hyperbolic tangent,
+            "relu" for rectified linear activation function
+
+        :type relu_alpha: float point number
+        :param relu_alpha: Only useful if activation == "relu", set slope for negative input, usually between 0 and 1.
+            The default value of 0 will lead to the standard rectifier, 1 will lead to a linear activation function,
+            and any value in between will give a leaky rectifier. A shared variable (broadcastable against x) will
+            result in a parameterized rectifier with learnable slope(s).
         """
         assert image_shape[1] == filter_shape[1]
         self.input = input
@@ -72,8 +84,16 @@ class ConvPoolLayer(object):
         # reshape it to a tensor of shape (1, n_filters, 1, 1). Each bias will
         # thus be broadcasted across mini-batches and feature map
         # width & height
-        # TODO: try to change activation function into parameter
-        self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        self.activation_dict = {
+            "tanh": T.tanh,
+            "relu": T.nnet.relu
+        }.get("default", T.tanh)
+        activation = self.activation_dict[activation_function]
+        # Additional parameters if we have relu activation function
+        if activation_function == "relu":
+            self.output = activation(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'), relu_alpha)
+        else:
+            self.output = activation(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
 
         # store parameters of this layer
         self.params = [self.W, self.b]
