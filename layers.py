@@ -155,7 +155,8 @@ class LogisticRegression(object):
         # x is a matrix where row-j  represents input training sample-j
         # b is a vector where element-k represent the free parameter of
         # hyperplane-k
-        self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
+        self.dot_product = T.dot(input, self.W)
+        self.p_y_given_x = T.nnet.softmax(self.dot_product + self.b)
 
         # symbolic description of how to compute prediction as class whose
         # probability is maximal
@@ -168,7 +169,7 @@ class LogisticRegression(object):
         # keep track of model input
         self.input = input
 
-    def negative_log_likelihood(self, y):
+    def negative_log_likelihood(self, y, positive_weight):
         """Return the mean of the negative log-likelihood of the prediction
         of this model under a given target distribution.
 
@@ -190,8 +191,15 @@ class LogisticRegression(object):
         # LP[n-1,y[n-1]]] and T.mean(LP[T.arange(y.shape[0]),y]) is
         # the mean (across minibatch examples) of the elements in v,
         # i.e., the mean log-likelihood across the minibatch.
-        return -T.mean(T.log(self.p_y_given_x + 0.001)[T.arange(y.shape[0]), y])
+        return -T.mean(T.log(self.p_y_given_x + 0.001)[T.arange(y.shape[0]), y] + y * positive_weight)
         # end-snippet-2
+
+    def quadratic_cost(self, y):
+        return 0.5 * T.sum((self.p_y_given_x[T.arange(y.shape[0]), y] - y) ** 2)
+
+    def cross_entropy(self, y):
+        return -T.sum(y * T.log(self.p_y_given_x + 0.001)[T.arange(y.shape[0]), y] + (1 - y) *
+                      T.log(1 - self.p_y_given_x + 0.001)[T.arange(y.shape[0]), y])
 
     def errors(self, y):
         """Return a float representing the number of errors in the minibatch

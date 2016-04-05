@@ -3,7 +3,6 @@ import datetime as dt
 import os
 
 import numpy as np
-import numpy.lib.recfunctions
 
 import nn
 import prepare_images
@@ -11,30 +10,33 @@ import prepare_images
 # TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
 
 
-dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
-annotation_path = dataset_path + 'allAnnotations.csv'
-negatives_path = dataset_path + "negatives.dat"
-train_set_complete = np.empty(0)
+dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/aiua120214-0/frameAnnotations-DataLog02142012_external_camera.avi_annotations/"
+annotation_path = dataset_path + 'frameAnnotations.csv'
+# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
+# annotation_path = dataset_path + 'allAnnotations.csv'
+
+# negatives_path = dataset_path + "negatives.dat"
+# train_set_complete = np.empty(0)
 train_set_without_negatives = np.empty(0)
 
 # TODO: Try different numbers and see how it goes
-NEGATIVE_MULTIPLIER = 40
+NEGATIVE_MULTIPLIER = 3
 
 
 def test_init(seed=16):
-    global train_set_complete
+    # global train_set_complete
     global train_set_without_negatives
     np.random.seed(seed)
 
     # Read data from files
     image_data = np.genfromtxt(annotation_path, delimiter=';', names=True, dtype=None)
-    negatives = np.genfromtxt(negatives_path, dtype=None)
-    negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
-    train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
+    # negatives = np.genfromtxt(negatives_path, dtype=None)
+    # negatives = negatives.view(dtype=[('Filename', negatives.dtype.str)])
+    # train_set_complete = numpy.lib.recfunctions.stack_arrays((image_data, negatives), autoconvert=True, usemask=False)
     train_set_without_negatives = image_data
 
     # Get random
-    np.random.shuffle(train_set_complete)
+    # np.random.shuffle(train_set_complete)
     np.random.shuffle(train_set_without_negatives)
 
 
@@ -74,13 +76,20 @@ def write_results(result: list, test_name):
 
 # test for train speed
 def show_some_weights(net):
-    (w, b) = net.layer0.params
+    (w, b) = net.layer2_logRegr.params
     # Too much weights, don't want print all of them
     print("First filter weights:")
-    print(w.get_value()[0])
+    print(w.get_value()[:2])
     # But not so much biases, so why not
     print("All bias:")
     print(b.get_value())
+    # (w, b) = net.layer0_convPool.params
+    # # Too much weights, don't want print all of them
+    # print("First filter weights:")
+    # print(w.get_value()[0])
+    # # But not so much biases, so why not
+    # print("All bias:")
+    # print(b.get_value())
 
 
 def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
@@ -90,16 +99,16 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
 
     res = []
     # ind = int(np.floor(len(train_set_complete) * 0.75))
-    ind = 1
+    ind = 10
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
         net = nn.Network(learning_rate=alfa, random_state=123)
-        train_set = train_set_complete['Filename'][0:ind]
-        lbl_train = (train_set_complete[['Upper_left_corner_X', 'Upper_left_corner_Y',
-                                         'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
+        train_set = train_set_without_negatives['Filename'][0:ind]
+        lbl_train = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
+                                                  'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
 
-        show_some_weights(net)
+        # show_some_weights(net)
 
         for i in range(0, ind):
             print(i)
@@ -121,10 +130,10 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
             print(lbls.shape)
             net.learning(dataset=imgs, labels=lbls)
 
+        # show_some_weights(net)
+
         net.save_params()
         net.load_params()
-
-        show_some_weights(net)
 
         print("Testing...")
         test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
@@ -141,6 +150,28 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         f1_score = 2 * tp / (2 * tp + fn + fp)
         print("True positive = {}, true negative = {}, false positive = {}, false negative = {}\nf1 score = {}"
               .format(tp, tn, fp, fn, f1_score))
+
+
+        # print("---------------")
+        # print(y_pred_softmax[lbls == 1])
+
+        # hd_input = net.hd_input(imgs)
+        # print(hd_input[:2])
+
+        # regr_input = net.regression_input(imgs)
+        # print(regr_input[:2])
+        #
+        # print("Dot product")
+        # dot_rpod = net.get_dot_product(imgs)
+        # print(dot_rpod[:2])
+        #
+        # print("Softmax")
+        # y_pred_softmax = net.softmax_print(imgs)
+        # print(y_pred_softmax[:2])
+        #
+        # print("Argmax")
+        # y_pred = net.predict(imgs)
+        # print(y_pred[:2])
 
     return res
 

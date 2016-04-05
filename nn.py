@@ -9,15 +9,13 @@ from theano import tensor as T
 import layers
 
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
-debug_mode = False
-
-IMG_WIDTH = 1025
-IMG_HEIGHT = 523
-IMG_LAYERS = 3
 
 SUB_IMG_WIDTH = 12
 SUB_IMG_HEIGHT = 12
 SUB_IMG_LAYERS = 3
+WIDTH_INDEX = 2
+HEIGHT_INDEX = 1
+LAYER_INDEX = 0
 
 
 def prepare_dataset(dataset, lbls=None):
@@ -65,14 +63,12 @@ def prepare_dataset(dataset, lbls=None):
 
 # TODO: Избавиться от магических чисел
 class Network(object):
-    def __init__(self, batch_size=500, filter_numbers=10, learning_rate=1, random_state=42):
+    def __init__(self, batch_size=500, filter_numbers=10, filter_size=(SUB_IMG_LAYERS, 5, 5), pool_size=(2, 2),
+                 hidden_layer_size=500, learning_rate=1, random_state=42):
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
-
         self.x = T.tensor4('x')  # the data is presented as rasterized images
         self.y = T.ivector('y')  # the labels are presented as 1D vector of
-        # [int] labels
-
         self.rng = numpy.random.RandomState(random_state)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -90,41 +86,50 @@ class Network(object):
         # filtering reduces the image size to (12-5+1 , 12-5+1) = (8, 8)
         # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
         # 4D output tensor is thus of shape (batch_size, filter_numbers, 4, 4)
-        self.layer0 = layers.ConvPoolLayer(
+        self.layer0_convPool = layers.ConvPoolLayer(
             self.rng,
             input=layer0_input,
             input_shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-            filter_shape=(filter_numbers, SUB_IMG_LAYERS, 5, 5),
-            poolsize=(2, 2),
+            filter_shape=(filter_numbers,) + filter_size,
+            poolsize=pool_size,
             activation_function="relu",
-            relu_alpha=0.1
+            relu_alpha=0.01
         )
 
         # the HiddenLayer being fully-connected, it operates on 2D matrices of
         # shape (batch_size, num_pixels) (i.e matrix of rasterized images).
         # This will generate a matrix of shape (batch_size, filter_numbers * 4 * 4),
         # or (500, 10 * 4 * 4) = (500, 160) with the default values.
-        layer1_input = self.layer0.output.flatten(2)
+        layer1_input = self.layer0_convPool.output.flatten(2)
 
         # construct a fully-connected sigmoidal layer
-        self.layer1 = layers.HiddenLayer(
+        hidden_layer_input_number = int(
+            filter_numbers * (SUB_IMG_WIDTH - filter_size[WIDTH_INDEX] + 1) / pool_size[0] * (
+                SUB_IMG_HEIGHT - filter_size[HEIGHT_INDEX] + 1) / pool_size[1])
+        self.layer1_hidden = layers.HiddenLayer(
             self.rng,
             input=layer1_input,
-            n_in=10 * 4 * 4,
-            n_out=500,
+            n_in=hidden_layer_input_number,
+            n_out=hidden_layer_size,
             activation_function="relu",
-            relu_alpha=0.1
+            relu_alpha=0.01
         )
 
         # classify the values of the fully-connected sigmoidal layer
-        # TODO: Найти способ сделать выход не 2, а 1, у меня все-таки бинарная классификация, с ней это получится
-        self.layer2 = layers.LogisticRegression(input=self.layer1.output, n_in=500, n_out=2)
+        self.layer2_logRegr = layers.LogisticRegression(input=self.layer1_hidden.output, n_in=hidden_layer_size,
+                                                        n_out=2)
 
         # the cost we minimize during training is the NLL of the model
-        self.cost = self.layer2.negative_log_likelihood(self.y)
+        self.L2_sqr = (
+            (self.layer1_hidden.W ** 2).sum()
+            + (self.layer2_logRegr.W ** 2).sum()
+        )
+        # self.cost = self.layer2_logRegr.negative_log_likelihood(self.y, positive_weight=0)
+        # self.cost = self.layer2_logRegr.quadratic_cost(self.y)
+        self.cost = self.layer2_logRegr.cross_entropy(self.y) + self.L2_sqr
 
         # create a list of all model parameters to be fit by gradient descent
-        self.params = self.layer2.params + self.layer1.params + self.layer0.params
+        self.params = self.layer2_logRegr.params + self.layer1_hidden.params + self.layer0_convPool.params
 
         # create a list of gradients for all model parameters
         self.grads = T.grad(self.cost, self.params)
@@ -165,11 +170,13 @@ class Network(object):
         ###############
         # TRAIN MODEL #
         ###############
-        print('... training')
+        # print('... training')
 
         start_time = timeit.default_timer()
 
         cost_ij = train_model(0)
+
+        print(cost_ij)
 
         end_time = timeit.default_timer()
         # print(('The code for file ' +
@@ -179,6 +186,7 @@ class Network(object):
     def learning(self, dataset, labels, n_epochs=200):
         dataset_first = self.convert48to12(dataset)
         size = 1000
+
         for i in range(dataset.shape[0] // size):
             datasets = prepare_dataset(dataset_first[i * size: i * size + size, :, :, :],
                                        labels[i * size: i * size + size])
@@ -192,8 +200,8 @@ class Network(object):
         dataset_first = self.convert48to12(dataset)
         size = 500
         pred = theano.function(
-            inputs=[self.layer0.input],
-            outputs=self.layer2.y_pred
+            inputs=[self.layer0_convPool.input],
+            outputs=self.layer2_logRegr.y_pred
         )
         res = numpy.zeros(dataset.shape[0])
         for i in range(dataset.shape[0] // size):
@@ -203,20 +211,75 @@ class Network(object):
 
     def save_params(self):
         save_file = open('params', 'wb')
-        pickle.dump(self.layer0.W, save_file, -1)
-        pickle.dump(self.layer0.b, save_file, -1)
-        pickle.dump(self.layer1.W, save_file, -1)
-        pickle.dump(self.layer1.b, save_file, -1)
-        pickle.dump(self.layer2.W, save_file, -1)
-        pickle.dump(self.layer2.b, save_file, -1)
+        pickle.dump(self.layer0_convPool.W, save_file, -1)
+        pickle.dump(self.layer0_convPool.b, save_file, -1)
+        pickle.dump(self.layer1_hidden.W, save_file, -1)
+        pickle.dump(self.layer1_hidden.b, save_file, -1)
+        pickle.dump(self.layer2_logRegr.W, save_file, -1)
+        pickle.dump(self.layer2_logRegr.b, save_file, -1)
         save_file.close()
 
     def load_params(self):
         save_file = open('params', 'rb')
-        self.layer0.W = pickle.load(save_file)
-        self.layer0.b = pickle.load(save_file)
-        self.layer1.W = pickle.load(save_file)
-        self.layer1.b = pickle.load(save_file)
-        self.layer2.W = pickle.load(save_file)
-        self.layer2.b = pickle.load(save_file)
+        self.layer0_convPool.W = pickle.load(save_file)
+        self.layer0_convPool.b = pickle.load(save_file)
+        self.layer1_hidden.W = pickle.load(save_file)
+        self.layer1_hidden.b = pickle.load(save_file)
+        self.layer2_logRegr.W = pickle.load(save_file)
+        self.layer2_logRegr.b = pickle.load(save_file)
         save_file.close()
+
+    def softmax_print(self, dataset):
+        dataset_first = self.convert48to12(dataset)
+        size = 500
+        pred = theano.function(
+            inputs=[self.layer0_convPool.input],
+            outputs=self.layer2_logRegr.p_y_given_x
+        )
+        res = numpy.empty((dataset.shape[0], 2))
+        for i in range(dataset.shape[0] // size):
+            # datasets = prepare_dataset()
+            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+        return res
+
+    def hd_input(self, dataset):
+        dataset_first = self.convert48to12(dataset)
+        size = 500
+        pred = theano.function(
+            inputs=[self.layer0_convPool.input],
+            outputs=self.layer1_hidden.input
+        )
+        # TODO: Избавиться от магического числа
+        res = numpy.empty((dataset.shape[0], 160))
+        for i in range(dataset.shape[0] // size):
+            # datasets = prepare_dataset()
+            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+        return res
+
+    def regression_input(self, dataset):
+        dataset_first = self.convert48to12(dataset)
+        size = 500
+        pred = theano.function(
+            inputs=[self.layer0_convPool.input],
+            outputs=self.layer2_logRegr.input
+        )
+        # TODO: Избавиться от магического числа
+        res = numpy.empty((dataset.shape[0], 500))
+        for i in range(dataset.shape[0] // size):
+            # datasets = prepare_dataset()
+            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+        return res
+
+    def get_dot_product(self, dataset):
+        dataset_first = self.convert48to12(dataset)
+        size = 500
+        pred = theano.function(
+            inputs=[self.layer0_convPool.input],
+            outputs=self.layer2_logRegr.dot_product
+        )
+        # TODO: Избавиться от магического числа
+        res = numpy.empty((dataset.shape[0], 2))
+        for i in range(dataset.shape[0] // size):
+            # datasets = prepare_dataset()
+            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+        return res
