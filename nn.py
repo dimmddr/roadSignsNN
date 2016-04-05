@@ -116,8 +116,11 @@ class Network(object):
         )
 
         # classify the values of the fully-connected sigmoidal layer
-        self.layer2_logRegr = layers.LogisticRegression(input=self.layer1_hidden.output, n_in=hidden_layer_size,
-                                                        n_out=2)
+        self.layer2_logRegr = layers.LogisticRegression(
+            input=self.layer1_hidden.output,
+            n_in=hidden_layer_size,
+            n_out=2
+        )
 
         # the cost we minimize during training is the NLL of the model
         self.L2_sqr = (
@@ -137,7 +140,10 @@ class Network(object):
     def convert48to12(self, dataset):
         return dataset[:, :, 1::4, 1::4]
 
-    def one_cycle(self, datasets):
+    def learning(self, dataset, labels, n_epochs=200):
+        dataset_first = self.convert48to12(dataset)
+        datasets = prepare_dataset(dataset_first,
+                                   labels)
         train_set_x, train_set_y = datasets
 
         # Full image size = (3, 523, 1025)
@@ -167,6 +173,7 @@ class Network(object):
             }
         )
 
+        n_train_batches = train_set_x.get_value(borrow=True).shape[0] // self.batch_size
         ###############
         # TRAIN MODEL #
         ###############
@@ -174,27 +181,15 @@ class Network(object):
 
         start_time = timeit.default_timer()
 
-        cost_ij = train_model(0)
+        for minibatch_index in range(n_train_batches):
+            cost_ij = train_model(minibatch_index)
 
-        print(cost_ij)
+            print(cost_ij)
 
         end_time = timeit.default_timer()
         # print(('The code for file ' +
         #        os.path.split(__file__)[1] +
         #        ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
-
-    def learning(self, dataset, labels, n_epochs=200):
-        dataset_first = self.convert48to12(dataset)
-        size = 1000
-
-        for i in range(dataset.shape[0] // size):
-            datasets = prepare_dataset(dataset_first[i * size: i * size + size, :, :, :],
-                                       labels[i * size: i * size + size])
-            self.one_cycle(datasets)
-            # datasets = prepare_dataset(
-            #     dataset[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size, :, :, :],
-            #     labels[size * dataset.shape[0]: size * dataset.shape[0] + dataset.shape[0] % size])
-            # self.one_cycle(datasets, n_epochs)
 
     def predict(self, dataset):
         dataset_first = self.convert48to12(dataset)
