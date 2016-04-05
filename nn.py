@@ -63,7 +63,7 @@ def prepare_dataset(dataset, lbls=None):
 
 # TODO: Избавиться от магических чисел
 class Network(object):
-    def __init__(self, batch_size=500, filter_numbers=10, filter_size=(SUB_IMG_LAYERS, 5, 5), pool_size=(2, 2),
+    def __init__(self, batch_size=100, filter_numbers=10, filter_size=(SUB_IMG_LAYERS, 5, 5), pool_size=(2, 2),
                  hidden_layer_size=500, learning_rate=1, random_state=42):
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
@@ -127,9 +127,9 @@ class Network(object):
             (self.layer1_hidden.W ** 2).sum()
             + (self.layer2_logRegr.W ** 2).sum()
         )
-        # self.cost = self.layer2_logRegr.negative_log_likelihood(self.y, positive_weight=0)
+        self.cost = self.layer2_logRegr.negative_log_likelihood(self.y, positive_weight=0)
         # self.cost = self.layer2_logRegr.quadratic_cost(self.y)
-        self.cost = self.layer2_logRegr.cross_entropy(self.y) + self.L2_sqr
+        # self.cost = self.layer2_logRegr.cross_entropy(self.y) + self.L2_sqr
 
         # create a list of all model parameters to be fit by gradient descent
         self.params = self.layer2_logRegr.params + self.layer1_hidden.params + self.layer0_convPool.params
@@ -140,11 +140,14 @@ class Network(object):
     def convert48to12(self, dataset):
         return dataset[:, :, 1::4, 1::4]
 
-    def learning(self, dataset, labels, n_epochs=200):
+    def learning(self, dataset, labels, n_epochs=200, debug_print=False):
         dataset_first = self.convert48to12(dataset)
         datasets = prepare_dataset(dataset_first,
                                    labels)
         train_set_x, train_set_y = datasets
+        # train_set_x, train_set_y = datasets[0]
+        # valid_set_x, valid_set_y = datasets[1]
+        # test_set_x, test_set_y = datasets[2]
 
         # Full image size = (3, 523, 1025)
         # "Break" full image into subimages of size = (3, 48, 48) where only every 4th columns and 4th rows counts,
@@ -165,7 +168,7 @@ class Network(object):
 
         train_model = theano.function(
             [self.index],
-            self.cost,
+            (self.cost, self.grads[0]),
             updates=updates,
             givens={
                 self.x: train_set_x[self.index * self.batch_size: (self.index + 1) * self.batch_size],
@@ -182,9 +185,14 @@ class Network(object):
         start_time = timeit.default_timer()
 
         for minibatch_index in range(n_train_batches):
-            cost_ij = train_model(minibatch_index)
+            (cost_ij, grad_0) = train_model(minibatch_index)
 
-            print(cost_ij)
+            if debug_print:
+                print("Cost = {}".format(cost_ij))
+                print("Gradient:{}".format(grad_0[0]))
+                print("True Positive count = {}".format(
+                    numpy.sum(labels[minibatch_index * n_train_batches: (minibatch_index + 1) * n_train_batches])
+                ))
 
         end_time = timeit.default_timer()
         # print(('The code for file ' +
@@ -193,7 +201,7 @@ class Network(object):
 
     def predict(self, dataset):
         dataset_first = self.convert48to12(dataset)
-        size = 500
+        size = self.batch_size
         pred = theano.function(
             inputs=[self.layer0_convPool.input],
             outputs=self.layer2_logRegr.y_pred
@@ -224,57 +232,27 @@ class Network(object):
         self.layer2_logRegr.b = pickle.load(save_file)
         save_file.close()
 
-    def softmax_print(self, dataset):
+    def get_internal_state(self, dataset):
         dataset_first = self.convert48to12(dataset)
-        size = 500
+        size = self.batch_size
         pred = theano.function(
             inputs=[self.layer0_convPool.input],
-            outputs=self.layer2_logRegr.p_y_given_x
+            outputs=(
+                self.layer1_hidden.input,
+                self.layer2_logRegr.input,
+                self.layer2_logRegr.dot_product,
+                self.layer2_logRegr.p_y_given_x
+            )
         )
-        res = numpy.empty((dataset.shape[0], 2))
-        for i in range(dataset.shape[0] // size):
+        res = numpy.empty((dataset.shape[0], 4))
+        # for i in range(dataset.shape[0] // size):
+        for i in range(10):
             # datasets = prepare_dataset()
-            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
-        return res
+            # res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+            tmp = pred(dataset_first[i * size: i * size + size, :, :, :])
 
-    def hd_input(self, dataset):
-        dataset_first = self.convert48to12(dataset)
-        size = 500
-        pred = theano.function(
-            inputs=[self.layer0_convPool.input],
-            outputs=self.layer1_hidden.input
-        )
-        # TODO: Избавиться от магического числа
-        res = numpy.empty((dataset.shape[0], 160))
-        for i in range(dataset.shape[0] // size):
-            # datasets = prepare_dataset()
-            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
-        return res
-
-    def regression_input(self, dataset):
-        dataset_first = self.convert48to12(dataset)
-        size = 500
-        pred = theano.function(
-            inputs=[self.layer0_convPool.input],
-            outputs=self.layer2_logRegr.input
-        )
-        # TODO: Избавиться от магического числа
-        res = numpy.empty((dataset.shape[0], 500))
-        for i in range(dataset.shape[0] // size):
-            # datasets = prepare_dataset()
-            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
-        return res
-
-    def get_dot_product(self, dataset):
-        dataset_first = self.convert48to12(dataset)
-        size = 500
-        pred = theano.function(
-            inputs=[self.layer0_convPool.input],
-            outputs=self.layer2_logRegr.dot_product
-        )
-        # TODO: Избавиться от магического числа
-        res = numpy.empty((dataset.shape[0], 2))
-        for i in range(dataset.shape[0] // size):
-            # datasets = prepare_dataset()
-            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
-        return res
+            print("layer1_hidden.input: {}".format(tmp[0][:5]))
+            print("layer2_logRegr.input: {}".format(tmp[1][:5]))
+            print("layer2_logRegr.dot_product: {}".format(tmp[2][:5]))
+            print("layer2_logRegr.p_y_given_x: {}".format(tmp[3][:5]))
+            # return res

@@ -9,6 +9,7 @@ ACTIVATION_DICT = {
     "relu": T.nnet.relu
 }
 
+
 class ConvPoolLayer(object):
     def __init__(self, rng, input, filter_shape, input_shape, poolsize=(2, 2),
                  activation_function="tanh", relu_alpha=0):
@@ -191,7 +192,7 @@ class LogisticRegression(object):
         # LP[n-1,y[n-1]]] and T.mean(LP[T.arange(y.shape[0]),y]) is
         # the mean (across minibatch examples) of the elements in v,
         # i.e., the mean log-likelihood across the minibatch.
-        return -T.mean(T.log(self.p_y_given_x + 0.001)[T.arange(y.shape[0]), y] + y * positive_weight)
+        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
         # end-snippet-2
 
     def quadratic_cost(self, y):

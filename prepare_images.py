@@ -37,9 +37,26 @@ def split_into_subimgs(img, lbl, sub_img_shape, lbl_array, step=1):
     for i in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
         for ii in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
             # result_array.append(img[:, i:i + sub_img_shape[WIDTH], ii:ii + sub_img_shape[HEIGHT]])
-            lbl_array[index] = int(
+            # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
+            is_cover = int(
                 compute_covering(Rectangle(i, ii, i + sub_img_shape[WIDTH], ii + sub_img_shape[HEIGHT]),
-                                 Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) > COVER_PERCENT)
+                                 Rectangle(lbl[1], lbl[0], lbl[3], lbl[2])) > COVER_PERCENT)
+            if 1 == is_cover:
+                roi = img[:, i: i + sub_img_shape[WIDTH], ii: ii + sub_img_shape[HEIGHT]]
+                (r, g, b) = (roi[0], roi[1], roi[2])
+                roi = cv2.merge((r, g, b))
+                cv2.imshow("img", roi)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+
+                roi = result_array[index]
+                (r, g, b) = (roi[0], roi[1], roi[2])
+                roi = cv2.merge((r, g, b))
+                cv2.imshow("img", roi)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+
+            lbl_array[index] = is_cover
             index += 1
     return result_array
 
@@ -51,9 +68,33 @@ def prepare(img_path, lbl):
     img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
     res_img = cv2.normalize(img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
     res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
+
     lbl_res = np.zeros(shape=int(
         (res_img.shape[WIDTH] - SUB_IMG_WIDTH + 1) / step * (res_img.shape[HEIGHT] - SUB_IMG_HEIGHT + 1) / step))
     res = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH), lbl=lbl,
                              lbl_array=lbl_res, step=step)
 
     return res, lbl_res
+
+
+def show_sign(img_path, lbl):
+    print(img_path)
+    print(lbl)
+    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+    cv2.imshow("img", img[lbl[1]:lbl[3], lbl[0]:lbl[2], :])
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    cv2.rectangle(img, (lbl[0], lbl[1]), (lbl[2], lbl[3]), 2)
+    cv2.imshow("img", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+def show_roi(roi_list):
+    for roi in roi_list:
+        (r, g, b) = (roi[0], roi[1], roi[2])
+        roi = cv2.merge((r, g, b))
+        cv2.imshow("img", roi)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()

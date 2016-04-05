@@ -10,7 +10,7 @@ import prepare_images
 # TODO: Придумать как хранить информацию о соответствии результатов сверточного слоя и весов
 
 
-dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/aiua120214-0/frameAnnotations-DataLog02142012_external_camera.avi_annotations/"
+dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
 annotation_path = dataset_path + 'frameAnnotations.csv'
 # dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
 # annotation_path = dataset_path + 'allAnnotations.csv'
@@ -99,79 +99,82 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
 
     res = []
     # ind = int(np.floor(len(train_set_complete) * 0.75))
-    ind = 10
+    ind = 1
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
-        net = nn.Network(learning_rate=alfa, random_state=123)
+        net = nn.Network(learning_rate=alfa, batch_size=50, random_state=123)
         train_set = train_set_without_negatives['Filename'][0:ind]
         lbl_train = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                                   'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
-
         # show_some_weights(net)
 
         for i in range(0, ind):
             print(i)
+            # prepare_images.show_sign(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            print("Image prepared")
-            imgs = all_imgs[all_lbls == 1]
-            lbls = all_lbls[all_lbls == 1]
-            # Set seed before every shuffle for consistent shuffle
-            np.random.seed(42)
-            np.random.shuffle(all_lbls)
-            np.random.seed(42)
-            np.random.shuffle(all_imgs)
-            neg_size = lbls.shape[0] * NEGATIVE_MULTIPLIER
-            neg_lbls = all_lbls[:neg_size]
-            neg_imgs = all_imgs[:neg_size]
-            imgs = np.concatenate((imgs, neg_imgs))
-            lbls = np.concatenate((lbls, neg_lbls))
-            print(imgs.shape)
-            print(lbls.shape)
-            net.learning(dataset=imgs, labels=lbls)
+            # print("Image prepared")
+            # imgs = all_imgs[all_lbls == 1]
+            # lbls = all_lbls[all_lbls == 1]
+            # prepare_images.show_roi(imgs)
+            # # Set seed before every shuffle for consistent shuffle
+            # np.random.seed(42)
+            # np.random.shuffle(all_lbls)
+            # np.random.seed(42)
+            # np.random.shuffle(all_imgs)
+            # neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
+            # neg_lbls = all_lbls[:neg_size]
+            # neg_imgs = all_imgs[:neg_size]
+            # print(lbls)
+            # imgs = np.concatenate((imgs, neg_imgs))
+            # lbls = np.concatenate((lbls, neg_lbls))
+            # print(lbls)
+            # print(imgs.shape)
+            # print(lbls.shape)
+            # net.learning(dataset=imgs, labels=lbls, debug_print=False)
 
-        # show_some_weights(net)
+            # show_some_weights(net)
 
-        net.save_params()
-        net.load_params()
+            # net.save_params()
+            # net.load_params()
+            #
+            # print("Testing...")
+            # test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
+            # lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
+            #                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
+            # imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
+            # y_pred = net.predict(imgs)
+            # tmp = lbls - y_pred
+            #
+            # tp = np.sum((y_pred == 1) & (lbls == 1))
+            # tn = np.sum((y_pred == 0) & (lbls == 0))
+            # fp = np.sum(tmp == -1)
+            # fn = np.sum(tmp == 1)
+            # f1_score = 2 * tp / (2 * tp + fn + fp)
+            # print("True positive = {}, true negative = {}, false positive = {}, false negative = {}\nf1 score = {}"
+            #       .format(tp, tn, fp, fn, f1_score))
 
-        print("Testing...")
-        test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
-        lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
-                                                 'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
-        imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-        y_pred = net.predict(imgs)
-        tmp = lbls - y_pred
 
-        tp = np.sum((y_pred == 1) & (lbls == 1))
-        tn = np.sum((y_pred == 0) & (lbls == 0))
-        fp = np.sum(tmp == -1)
-        fn = np.sum(tmp == 1)
-        f1_score = 2 * tp / (2 * tp + fn + fp)
-        print("True positive = {}, true negative = {}, false positive = {}, false negative = {}\nf1 score = {}"
-              .format(tp, tn, fp, fn, f1_score))
+            # print("---------------")
+            # print(y_pred_softmax[lbls == 1])
 
+            # net.get_internal_state(imgs)
+            # print(hd_input[:2][0])
 
-        # print("---------------")
-        # print(y_pred_softmax[lbls == 1])
-
-        # hd_input = net.hd_input(imgs)
-        # print(hd_input[:2])
-
-        # regr_input = net.regression_input(imgs)
-        # print(regr_input[:2])
-        #
-        # print("Dot product")
-        # dot_rpod = net.get_dot_product(imgs)
-        # print(dot_rpod[:2])
-        #
-        # print("Softmax")
-        # y_pred_softmax = net.softmax_print(imgs)
-        # print(y_pred_softmax[:2])
-        #
-        # print("Argmax")
-        # y_pred = net.predict(imgs)
-        # print(y_pred[:2])
+            # regr_input = net.regression_input(imgs)
+            # print(regr_input[:2])
+            #
+            # print("Dot product")
+            # dot_rpod = net.get_dot_product(imgs)
+            # print(dot_rpod[:2])
+            #
+            # print("Softmax")
+            # y_pred_softmax = net.softmax_print(imgs)
+            # print(y_pred_softmax[:2])
+            #
+            # print("Argmax")
+            # y_pred = net.predict(imgs)
+            # print(y_pred[:2])
 
     return res
 
