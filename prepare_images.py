@@ -12,7 +12,7 @@ IMG_LAYERS = 3
 SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
-COVER_PERCENT = 0.6
+COVER_PERCENT = 0.4
 WIDTH = 2
 HEIGHT = 1
 LAYERS = 0
@@ -57,7 +57,7 @@ def split_into_subimgs(img, lbl, sub_img_shape, lbl_array, debug, step=1):
 
             lbl_array[index] = is_cover
             index += 1
-        index += sub_img_shape[WIDTH] / step
+        index += int(sub_img_shape[WIDTH] / step)
     return result_array
 
 

@@ -20,7 +20,7 @@ annotation_path = dataset_path + 'frameAnnotations.csv'
 train_set_without_negatives = np.empty(0)
 
 # TODO: Try different numbers and see how it goes
-NEGATIVE_MULTIPLIER = 3
+NEGATIVE_MULTIPLIER = 1
 
 
 def test_init(seed=16):
@@ -76,20 +76,9 @@ def write_results(result: list, test_name):
 
 # test for train speed
 def show_some_weights(net):
-    (w, b) = net.layer2_logRegr.params
-    # Too much weights, don't want print all of them
-    print("First filter weights:")
-    print(w.get_value()[:2])
-    # But not so much biases, so why not
-    print("All bias:")
-    print(b.get_value())
-    # (w, b) = net.layer0_convPool.params
-    # # Too much weights, don't want print all of them
-    # print("First filter weights:")
-    # print(w.get_value()[0])
-    # # But not so much biases, so why not
-    # print("All bias:")
-    # print(b.get_value())
+    (w, b) = net.layer0_convPool.params
+    # prepare_images.show_roi(w.get_value())
+    print(w.get_value())
 
 
 def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
@@ -99,7 +88,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
 
     res = []
     # ind = int(np.floor(len(train_set_complete) * 0.75))
-    ind = 1
+    ind = 100
     for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
         print(alf)
         alfa = alf
@@ -107,53 +96,55 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
         train_set = train_set_without_negatives['Filename'][0:ind]
         lbl_train = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
                                                   'Lower_right_corner_X', 'Lower_right_corner_Y']][0:ind])
-        # show_some_weights(net)
 
         for i in range(0, ind):
             print(i)
-            # prepare_images.show_sign(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-            # print("Image prepared")
-            # imgs = all_imgs[all_lbls == 1]
-            # lbls = all_lbls[all_lbls == 1]
+            print("Image prepared")
+            imgs = all_imgs[all_lbls == 1]
             # prepare_images.show_roi(imgs)
-            # # Set seed before every shuffle for consistent shuffle
-            # np.random.seed(42)
-            # np.random.shuffle(all_lbls)
-            # np.random.seed(42)
-            # np.random.shuffle(all_imgs)
-            # neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
-            # neg_lbls = all_lbls[:neg_size]
-            # neg_imgs = all_imgs[:neg_size]
+            lbls = all_lbls[all_lbls == 1]
+            # Set seed before every shuffle for consistent shuffle
+            np.random.seed(42)
+            np.random.shuffle(all_lbls)
+            np.random.seed(42)
+            np.random.shuffle(all_imgs)
+            neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
+            neg_lbls = all_lbls[:neg_size]
+            neg_imgs = all_imgs[:neg_size]
             # print(lbls)
-            # imgs = np.concatenate((imgs, neg_imgs))
-            # lbls = np.concatenate((lbls, neg_lbls))
+            imgs = np.concatenate((imgs, neg_imgs))
+            lbls = np.concatenate((lbls, neg_lbls))
             # print(lbls)
-            # print(imgs.shape)
-            # print(lbls.shape)
-            # net.learning(dataset=imgs, labels=lbls, debug_print=False)
+            print(imgs.shape)
+            print(lbls.shape)
+            # Set seed before every shuffle for consistent shuffle
+            np.random.seed(42)
+            np.random.shuffle(lbls)
+            np.random.seed(42)
+            np.random.shuffle(imgs)
+            net.learning(dataset=imgs, labels=lbls, debug_print=True)
 
-            # show_some_weights(net)
+        net.save_params()
+        net.load_params()
 
-            # net.save_params()
-            # net.load_params()
-            #
-            # print("Testing...")
-            # test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
-            # lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
-            #                                          'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
-            # imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-            # y_pred = net.predict(imgs)
-            # tmp = lbls - y_pred
-            #
-            # tp = np.sum((y_pred == 1) & (lbls == 1))
-            # tn = np.sum((y_pred == 0) & (lbls == 0))
-            # fp = np.sum(tmp == -1)
-            # fn = np.sum(tmp == 1)
-            # f1_score = 2 * tp / (2 * tp + fn + fp)
-            # print("True positive = {}, true negative = {}, false positive = {}, false negative = {}\nf1 score = {}"
-            #       .format(tp, tn, fp, fn, f1_score))
+        # show_some_weights(net)
 
+        print("Testing...")
+        test_img = train_set_without_negatives['Filename'][ind + 1:ind + 2]
+        lbl_test = (train_set_without_negatives[['Upper_left_corner_X', 'Upper_left_corner_Y',
+                                                 'Lower_right_corner_X', 'Lower_right_corner_Y']][ind + 1:ind + 2])
+        imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
+        y_pred = net.predict(imgs)
+        tmp = lbls - y_pred
+
+        tp = np.sum((y_pred == 1) & (lbls == 1))
+        tn = np.sum((y_pred == 0) & (lbls == 0))
+        fp = np.sum(tmp == -1)
+        fn = np.sum(tmp == 1)
+        f1_score = 2 * tp / (2 * tp + fn + fp)
+        print("True positive = {}, true negative = {}, false positive = {}, false negative = {}\nf1 score = {}"
+              .format(tp, tn, fp, fn, f1_score))
 
             # print("---------------")
             # print(y_pred_softmax[lbls == 1])

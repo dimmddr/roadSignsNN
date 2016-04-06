@@ -61,9 +61,8 @@ def prepare_dataset(dataset, lbls=None):
     return rval
 
 
-# TODO: Избавиться от магических чисел
 class Network(object):
-    def __init__(self, batch_size=100, filter_numbers=10, filter_size=(SUB_IMG_LAYERS, 5, 5), pool_size=(2, 2),
+    def __init__(self, batch_size=100, filter_numbers=10, filter_size=(SUB_IMG_LAYERS, 7, 7), pool_size=(2, 2),
                  hidden_layer_size=500, learning_rate=1, random_state=42):
         # allocate symbolic variables for the data
         self.index = T.lscalar()  # index to a [mini]batch
@@ -191,8 +190,11 @@ class Network(object):
                 print("Cost = {}".format(cost_ij))
                 print("Gradient:{}".format(grad_0[0]))
                 print("True Positive count = {}".format(
-                    numpy.sum(labels[minibatch_index * n_train_batches: (minibatch_index + 1) * n_train_batches])
+                    numpy.sum(labels[minibatch_index * self.batch_size: (minibatch_index + 1) * self.batch_size])
                 ))
+                # print(minibatch_index)
+                # print(n_train_batches)
+                # print(labels[minibatch_index * self.batch_size: (minibatch_index + 1) * self.batch_size])
 
         end_time = timeit.default_timer()
         # print(('The code for file ' +
