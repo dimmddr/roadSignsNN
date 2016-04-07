@@ -123,8 +123,7 @@ class Network(object):
 
         # the cost we minimize during training is the NLL of the model
         self.L2_sqr = (
-            (self.layer1_hidden.W ** 2).sum()
-            + (self.layer2_logRegr.W ** 2).sum()
+            (self.layer1_hidden.W ** 2).sum() + (self.layer2_logRegr.W ** 2).sum()
         )
         self.cost = self.layer2_logRegr.negative_log_likelihood(self.y, positive_weight=0)
         # self.cost = self.layer2_logRegr.quadratic_cost(self.y)
@@ -179,7 +178,7 @@ class Network(object):
         ###############
         # TRAIN MODEL #
         ###############
-        # print('... training')
+        print('... training')
 
         start_time = timeit.default_timer()
 
@@ -189,7 +188,7 @@ class Network(object):
             if debug_print:
                 print("Cost = {}".format(cost_ij))
                 print("Gradient:{}".format(grad_0[0]))
-                print("True Positive count = {}".format(
+                print("Positive labels count = {}".format(
                     numpy.sum(labels[minibatch_index * self.batch_size: (minibatch_index + 1) * self.batch_size])
                 ))
                 # print(minibatch_index)
