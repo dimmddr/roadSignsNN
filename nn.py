@@ -2,11 +2,10 @@ import pickle
 import timeit
 from collections import namedtuple
 
+import lasagne
 import numpy
 import theano
 from theano import tensor as T
-
-import layers
 
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
 
@@ -62,78 +61,41 @@ def prepare_dataset(dataset, lbls=None):
 
 
 class Network(object):
-    def __init__(self, batch_size=100, filter_numbers=10, filter_size=(SUB_IMG_LAYERS, 7, 7), pool_size=(2, 2),
+    def __init__(self, batch_size=100, filter_numbers=10, filter_shape=(SUB_IMG_LAYERS, 7, 7), pool_size=(2, 2),
                  hidden_layer_size=500, learning_rate=1, random_state=42):
-        # allocate symbolic variables for the data
-        self.index = T.lscalar()  # index to a [mini]batch
-        self.x = T.tensor4('x')  # the data is presented as rasterized images
-        self.y = T.ivector('y')  # the labels are presented as 1D vector of
-        self.rng = numpy.random.RandomState(random_state)
-        self.batch_size = batch_size
+        # Input layer
+        self.network = lasagne.layers.InputLayer(
+            shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
+        )
+
+        # Сверточный слой, принимает регион исходного изображения размером 3х12х12
+        self.network = lasagne.layers.Conv2DLayer(
+            incoming=self.network,
+            num_filters=filter_numbers,
+            filter_size=(filter_shape[1], filter_shape[2]),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform()
+        )
+
+        # Polling layer
+        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
+
+        # Fully-connected layer with 50% dropout
+        self.network = lasagne.layers.DenseLayer(
+            lasagne.layers.dropout(self.network, p=.5),
+            num_units=hidden_layer_size,
+            nonlinearity=lasagne.nonlinearities.rectify
+        )
+
+        # Softmax layer with dropout. 2 unit output
+        self.network = lasagne.layers.DenseLayer(
+            lasagne.layers.dropout(self.network, p=.5),
+            num_units=2,
+            nonlinearity=lasagne.nonlinearities.softmax
+        )
+
         self.learning_rate = learning_rate
 
-        ######################
-        # BUILD ACTUAL MODEL #
-        ######################
-        print('... building the model')
-
-        # Reshape matrix of rasterized images of shape (batch_size, 3, 12 * 12)
-        # to a 4D tensor, compatible with our LeNetConvPoolLayer
-        layer0_input = self.x.reshape((batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH))
-
-        # Construct the first convolutional pooling layer:
-        # filtering reduces the image size to (12-5+1 , 12-5+1) = (8, 8)
-        # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
-        # 4D output tensor is thus of shape (batch_size, filter_numbers, 4, 4)
-        self.layer0_convPool = layers.ConvPoolLayer(
-            self.rng,
-            input=layer0_input,
-            input_shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-            filter_shape=(filter_numbers,) + filter_size,
-            poolsize=pool_size,
-            activation_function="relu",
-            relu_alpha=0.01
-        )
-
-        # the HiddenLayer being fully-connected, it operates on 2D matrices of
-        # shape (batch_size, num_pixels) (i.e matrix of rasterized images).
-        # This will generate a matrix of shape (batch_size, filter_numbers * 4 * 4),
-        # or (500, 10 * 4 * 4) = (500, 160) with the default values.
-        layer1_input = self.layer0_convPool.output.flatten(2)
-
-        # construct a fully-connected sigmoidal layer
-        hidden_layer_input_number = int(
-            filter_numbers * (SUB_IMG_WIDTH - filter_size[WIDTH_INDEX] + 1) / pool_size[0] * (
-                SUB_IMG_HEIGHT - filter_size[HEIGHT_INDEX] + 1) / pool_size[1])
-        self.layer1_hidden = layers.HiddenLayer(
-            self.rng,
-            input=layer1_input,
-            n_in=hidden_layer_input_number,
-            n_out=hidden_layer_size,
-            activation_function="relu",
-            relu_alpha=0.01
-        )
-
-        # classify the values of the fully-connected sigmoidal layer
-        self.layer2_logRegr = layers.LogisticRegression(
-            input=self.layer1_hidden.output,
-            n_in=hidden_layer_size,
-            n_out=2
-        )
-
-        # the cost we minimize during training is the NLL of the model
-        self.L2_sqr = (
-            (self.layer1_hidden.W ** 2).sum() + (self.layer2_logRegr.W ** 2).sum()
-        )
-        self.cost = self.layer2_logRegr.negative_log_likelihood(self.y, positive_weight=0)
-        # self.cost = self.layer2_logRegr.quadratic_cost(self.y)
-        # self.cost = self.layer2_logRegr.cross_entropy(self.y) + self.L2_sqr
-
-        # create a list of all model parameters to be fit by gradient descent
-        self.params = self.layer2_logRegr.params + self.layer1_hidden.params + self.layer0_convPool.params
-
-        # create a list of gradients for all model parameters
-        self.grads = T.grad(self.cost, self.params)
 
     def convert48to12(self, dataset):
         return dataset[:, :, 1::4, 1::4]
