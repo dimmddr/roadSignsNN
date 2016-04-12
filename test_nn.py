@@ -194,8 +194,8 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 np.random.shuffle(imgs)
                 net.learning(dataset=imgs, labels=lbls, debug_print=debug)
 
-                net.save_params()
-            net.load_params()
+            # net.save_params()
+            # net.load_params()
 
             # show_some_weights(net)
 
@@ -239,15 +239,14 @@ def test_load_params(batch_size=45, random_state=123, init=False):
               .format(f1_score, tp, tn, fp, fn))
 
 
-
 def test_all():
     # print("Test learning speed")
     # test_learning_speed(0.5, 3, 0.5, init=True)
-    # print("test batch size")
-    # res = test_batch_size(45, 50, 5)
-    # print(res)
-    print("Test load parameters")
-    test_load_params()
+    print("test batch size")
+    res = test_batch_size(45, 50, 5)
+    print(res)
+    # print("Test load parameters")
+    # test_load_params()
 
 
 if __name__ == '__main__':

@@ -1,9 +1,8 @@
-import pickle
 import timeit
 from collections import namedtuple
 
 import lasagne
-import numpy
+import numpy as np
 import theano
 from theano import tensor as T
 
@@ -19,7 +18,7 @@ LAYER_INDEX = 0
 
 def prepare_dataset(dataset, lbls=None):
     """ Prepare the dataset
-    :param dataset: numpy 4D array with shape (images_number, image_height, image_width, image_layers)
+    :param dataset: np 4D array with shape (images_number, image_height, image_width, image_layers)
     :param lbls: labels for images in [0, 1]
     :return tuple of theano.shared if lbls is not None, otherwise return single theano.shared
     """
@@ -34,12 +33,12 @@ def prepare_dataset(dataset, lbls=None):
         is needed (the default behaviour if the data is not in a shared
         variable) would lead to a large decrease in performance.
         """
-        shared_x = theano.shared(numpy.asarray(data_x,
-                                               dtype=theano.config.floatX),
+        shared_x = theano.shared(np.asarray(data_x,
+                                            dtype=theano.config.floatX),
                                  borrow=borrow)
         if data_y is not None:
-            shared_y = theano.shared(numpy.asarray(data_y,
-                                                   dtype=theano.config.floatX),
+            shared_y = theano.shared(np.asarray(data_y,
+                                                dtype=theano.config.floatX),
                                      borrow=borrow)
             # When storing data on the GPU it has to be stored as floats
             # therefore we will store the labels as ``floatX`` as well
@@ -60,12 +59,35 @@ def prepare_dataset(dataset, lbls=None):
     return rval
 
 
+def convert48to12(dataset):
+    return dataset[:, :, 1::4, 1::4]
+
+
+def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
+    assert len(inputs) == len(targets)
+    if shuffle:
+        indices = np.arange(len(inputs))
+        np.random.shuffle(indices)
+    for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+        if shuffle:
+            excerpt = indices[start_idx:start_idx + batchsize]
+        else:
+            excerpt = slice(start_idx, start_idx + batchsize)
+        yield inputs[excerpt], targets[excerpt]
+
+
 class Network(object):
     def __init__(self, batch_size=100, filter_numbers=10, filter_shape=(SUB_IMG_LAYERS, 7, 7), pool_size=(2, 2),
-                 hidden_layer_size=500, learning_rate=1, random_state=42):
+                 hidden_layer_size=500, learning_rate=0.01, random_state=42):
+        self.input = T.tensor4('inputs')
+        self.target = T.ivector('targets')
+        self.learning_rate = learning_rate
+        self.rng = np.random.RandomState(random_state)
+        self.batch_size = batch_size
         # Input layer
         self.network = lasagne.layers.InputLayer(
-            shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
+            shape=(batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+            input_var=self.input
         )
 
         # Сверточный слой, принимает регион исходного изображения размером 3х12х12
@@ -93,129 +115,94 @@ class Network(object):
             num_units=2,
             nonlinearity=lasagne.nonlinearities.softmax
         )
+        self.prediction = lasagne.layers.get_output(self.network)
+        loss = lasagne.objectives.categorical_crossentropy(self.prediction, self.target)
+        self.loss = loss.mean()
 
-        self.learning_rate = learning_rate
+        self.params = lasagne.layers.get_all_params(self.network, trainable=True)
+        self.updates = lasagne.updates.nesterov_momentum(
+            self.loss, self.params, learning_rate=self.learning_rate, momentum=0.9)
 
-
-    def convert48to12(self, dataset):
-        return dataset[:, :, 1::4, 1::4]
+        self.train_fn = theano.function([self.input, self.target], loss, updates=self.updates,
+                                        allow_input_downcast=True)
+        self.predict = theano.function([self.input], self.prediction, allow_input_downcast=True)
 
     def learning(self, dataset, labels, n_epochs=200, debug_print=False):
-        dataset_first = self.convert48to12(dataset)
+        dataset_first = convert48to12(dataset)
         datasets = prepare_dataset(dataset_first,
                                    labels)
-        train_set_x, train_set_y = datasets
-        # train_set_x, train_set_y = datasets[0]
-        # valid_set_x, valid_set_y = datasets[1]
-        # test_set_x, test_set_y = datasets[2]
+        train_set_x, train_set_y = (dataset_first, labels)
+        # train_set_x, train_set_y = datasets
 
-        # Full image size = (3, 523, 1025)
-        # "Break" full image into subimages of size = (3, 48, 48) where only every 4th columns and 4th rows counts,
-        # others pixels throw away for now. So, essentially there is image with size = (3, 12, 12)
-        # With subimages window step = 1 pixel we have 1396584 subimages and that quite a much, so i decide did
-        # step = 2 with step = 2 for rows and column we will have 1396584 / 4 = 349146 subimages.
-        # I will check if that's few enough
-
-        # train_model is a function that updates the model parameters by
-        # SGD Since this model has many parameters, it would be tedious to
-        # manually create an update rule for each model parameter. We thus
-        # create the updates list by automatically looping over all
-        # (params[i], grads[i]) pairs.
-        updates = [
-            (param_i, param_i - self.learning_rate * grad_i)
-            for param_i, grad_i in zip(self.params, self.grads)
-            ]
-
-        train_model = theano.function(
-            [self.index],
-            (self.cost, self.grads[0]),
-            updates=updates,
-            givens={
-                self.x: train_set_x[self.index * self.batch_size: (self.index + 1) * self.batch_size],
-                self.y: train_set_y[self.index * self.batch_size: (self.index + 1) * self.batch_size]
-            }
-        )
-
-        n_train_batches = train_set_x.get_value(borrow=True).shape[0] // self.batch_size
         ###############
         # TRAIN MODEL #
         ###############
         print('... training')
+        for epoch in range(n_epochs):
+            train_err = 0
+            train_batches = 0
+            start_time = timeit.default_timer()
 
-        start_time = timeit.default_timer()
+            for batch in iterate_minibatches(train_set_x, train_set_y, self.batch_size, shuffle=False):
+                inputs, targets = batch
+                train_err += self.train_fn(inputs, targets)
+                train_batches += 1
 
-        for minibatch_index in range(n_train_batches):
-            (cost_ij, grad_0) = train_model(minibatch_index)
+            end_time = timeit.default_timer()
 
-            if debug_print:
-                print("Cost = {}".format(cost_ij))
-                print("Gradient:{}".format(grad_0[0]))
-                print("Positive labels count = {}".format(
-                    numpy.sum(labels[minibatch_index * self.batch_size: (minibatch_index + 1) * self.batch_size])
-                ))
-                # print(minibatch_index)
-                # print(n_train_batches)
-                # print(labels[minibatch_index * self.batch_size: (minibatch_index + 1) * self.batch_size])
-
-        end_time = timeit.default_timer()
-        # print(('The code for file ' +
-        #        os.path.split(__file__)[1] +
-        #        ' ran for %.2fm' % ((end_time - start_time) / 60.)), file=sys.stderr)
+            print("Epoch {} of {} took {:.3f}s".format(
+                epoch + 1, n_epochs, end_time - start_time))
 
     def predict(self, dataset):
-        dataset_first = self.convert48to12(dataset)
+        dataset_first = convert48to12(dataset)
         size = self.batch_size
-        pred = theano.function(
-            inputs=[self.layer0_convPool.input],
-            outputs=self.layer2_logRegr.y_pred
-        )
-        res = numpy.zeros(dataset.shape[0])
+        res = np.zeros(dataset.shape[0])
         for i in range(dataset.shape[0] // size):
             # datasets = prepare_dataset()
-            res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+            res[i * size: i * size + size] = self.pred(dataset_first[i * size: i * size + size, :, :, :])
         return res
 
-    def save_params(self):
-        save_file = open('params', 'wb')
-        pickle.dump(self.layer0_convPool.W, save_file, -1)
-        pickle.dump(self.layer0_convPool.b, save_file, -1)
-        pickle.dump(self.layer1_hidden.W, save_file, -1)
-        pickle.dump(self.layer1_hidden.b, save_file, -1)
-        pickle.dump(self.layer2_logRegr.W, save_file, -1)
-        pickle.dump(self.layer2_logRegr.b, save_file, -1)
-        save_file.close()
-
-    def load_params(self):
-        save_file = open('params', 'rb')
-        self.layer0_convPool.W = pickle.load(save_file)
-        self.layer0_convPool.b = pickle.load(save_file)
-        self.layer1_hidden.W = pickle.load(save_file)
-        self.layer1_hidden.b = pickle.load(save_file)
-        self.layer2_logRegr.W = pickle.load(save_file)
-        self.layer2_logRegr.b = pickle.load(save_file)
-        save_file.close()
-
-    def get_internal_state(self, dataset):
-        dataset_first = self.convert48to12(dataset)
-        size = self.batch_size
-        pred = theano.function(
-            inputs=[self.layer0_convPool.input],
-            outputs=(
-                self.layer1_hidden.input,
-                self.layer2_logRegr.input,
-                self.layer2_logRegr.dot_product,
-                self.layer2_logRegr.p_y_given_x
-            )
-        )
-        res = numpy.empty((dataset.shape[0], 4))
-        # for i in range(dataset.shape[0] // size):
-        for i in range(10):
-            # datasets = prepare_dataset()
-            # res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
-            tmp = pred(dataset_first[i * size: i * size + size, :, :, :])
-
-            print("layer1_hidden.input: {}".format(tmp[0][:5]))
-            print("layer2_logRegr.input: {}".format(tmp[1][:5]))
-            print("layer2_logRegr.dot_product: {}".format(tmp[2][:5]))
-            print("layer2_logRegr.p_y_given_x: {}".format(tmp[3][:5]))
-            # return res
+        # def save_params(self):
+        #     save_file = open('params', 'wb')
+        #     pickle.dump(self.layer0_convPool.W, save_file, -1)
+        #     pickle.dump(self.layer0_convPool.b, save_file, -1)
+        #     pickle.dump(self.layer1_hidden.W, save_file, -1)
+        #     pickle.dump(self.layer1_hidden.b, save_file, -1)
+        #     pickle.dump(self.layer2_logRegr.W, save_file, -1)
+        #     pickle.dump(self.layer2_logRegr.b, save_file, -1)
+        #     save_file.close()
+        #
+        # def load_params(self):
+        #     save_file = open('params', 'rb')
+        #     self.layer0_convPool.W = pickle.load(save_file)
+        #     self.layer0_convPool.b = pickle.load(save_file)
+        #     self.layer1_hidden.W = pickle.load(save_file)
+        #     self.layer1_hidden.b = pickle.load(save_file)
+        #     self.layer2_logRegr.W = pickle.load(save_file)
+        #     self.layer2_logRegr.b = pickle.load(save_file)
+        #     save_file.close()
+        #
+        # def get_internal_state(self, dataset):
+        #     dataset_first = convert48to12(dataset)
+        #     size = self.batch_size
+        #     pred = theano.function(
+        #         inputs=[self.layer0_convPool.input],
+        #         outputs=(
+        #             self.layer1_hidden.input,
+        #             self.layer2_logRegr.input,
+        #             self.layer2_logRegr.dot_product,
+        #             self.layer2_logRegr.p_y_given_x
+        #         )
+        #     )
+        #     res = np.empty((dataset.shape[0], 4))
+        #     # for i in range(dataset.shape[0] // size):
+        #     for i in range(10):
+        #         # datasets = prepare_dataset()
+        #         # res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
+        #         tmp = pred(dataset_first[i * size: i * size + size, :, :, :])
+        #
+        #         print("layer1_hidden.input: {}".format(tmp[0][:5]))
+        #         print("layer2_logRegr.input: {}".format(tmp[1][:5]))
+        #         print("layer2_logRegr.dot_product: {}".format(tmp[2][:5]))
+        #         print("layer2_logRegr.p_y_given_x: {}".format(tmp[3][:5]))
+        #         # return res
