@@ -1,4 +1,3 @@
-import timeit
 from collections import namedtuple
 
 import lasagne
@@ -8,8 +7,8 @@ from theano import tensor as T
 
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
 
-SUB_IMG_WIDTH = 12
-SUB_IMG_HEIGHT = 12
+SUB_IMG_WIDTH = 24
+SUB_IMG_HEIGHT = 24
 SUB_IMG_LAYERS = 3
 WIDTH_INDEX = 2
 HEIGHT_INDEX = 1
@@ -63,6 +62,10 @@ def convert48to12(dataset):
     return dataset[:, :, 1::4, 1::4]
 
 
+def convert48to24(dataset):
+    return dataset[:, :, 1::2, 1::2]
+
+
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     assert len(inputs) == len(targets)
     if shuffle:
@@ -99,7 +102,7 @@ class Network(object):
             W=lasagne.init.GlorotUniform()
         )
 
-        # Polling layer
+        # Poolling layer
         self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
 
         # Fully-connected layer with 50% dropout
@@ -125,10 +128,10 @@ class Network(object):
 
         self.train_fn = theano.function([self.input, self.target], loss, updates=self.updates,
                                         allow_input_downcast=True)
-        self.predict = theano.function([self.input], self.prediction, allow_input_downcast=True)
+        self.predict_values = theano.function([self.input], T.argmax(self.prediction), allow_input_downcast=True)
 
     def learning(self, dataset, labels, n_epochs=200, debug_print=False):
-        dataset_first = convert48to12(dataset)
+        dataset_first = convert48to24(dataset)
         datasets = prepare_dataset(dataset_first,
                                    labels)
         train_set_x, train_set_y = (dataset_first, labels)
@@ -141,25 +144,25 @@ class Network(object):
         for epoch in range(n_epochs):
             train_err = 0
             train_batches = 0
-            start_time = timeit.default_timer()
+            # start_time = timeit.default_timer()
 
             for batch in iterate_minibatches(train_set_x, train_set_y, self.batch_size, shuffle=False):
                 inputs, targets = batch
                 train_err += self.train_fn(inputs, targets)
                 train_batches += 1
 
-            end_time = timeit.default_timer()
-
-            print("Epoch {} of {} took {:.3f}s".format(
-                epoch + 1, n_epochs, end_time - start_time))
+                # end_time = timeit.default_timer()
+                #
+                # print("Epoch {} of {} took {:.3f}s".format(
+                #     epoch + 1, n_epochs, end_time - start_time))
 
     def predict(self, dataset):
-        dataset_first = convert48to12(dataset)
+        dataset_first = convert48to24(dataset)
         size = self.batch_size
         res = np.zeros(dataset.shape[0])
         for i in range(dataset.shape[0] // size):
             # datasets = prepare_dataset()
-            res[i * size: i * size + size] = self.pred(dataset_first[i * size: i * size + size, :, :, :])
+            res[i * size: i * size + size] = self.predict_values(dataset_first[i * size: i * size + size, :, :, :])
         return res
 
         # def save_params(self):

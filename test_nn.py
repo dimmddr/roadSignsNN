@@ -140,7 +140,7 @@ def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
             test_img = np.array(list(train_set_without_negatives.keys())[:ind])
             lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
             imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-            y_pred = net.predict(imgs)
+            y_pred = net.predict_values(imgs)
             tmp = lbls - y_pred
 
             tp = np.sum((y_pred == 1) & (lbls == 1))
@@ -159,11 +159,11 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
         res = []
 
         # ind = int(np.floor(len(train_set_complete) * 0.75))
-        ind = 10
+        ind = 100
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
-            alfa = 1
-            net = nn.Network(learning_rate=alfa, batch_size=batch_size, random_state=123)
+            alfa = 0.01
+            net = nn.Network(learning_rate=alfa, filter_numbers=100, batch_size=batch_size, random_state=123)
             train_set = np.array(list(train_set_without_negatives.keys()))
             train_set.sort()
             train_set = train_set[:ind]
@@ -227,7 +227,7 @@ def test_load_params(batch_size=45, random_state=123, init=False):
     lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
     for i in range(test_img.shape[0]):
         imgs, lbls = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
-        y_pred = net.predict(imgs)
+        y_pred = net.predict_values(imgs)
         tmp = lbls - y_pred
 
         tp = np.sum((y_pred == 1) & (lbls == 1))
@@ -243,7 +243,7 @@ def test_all():
     # print("Test learning speed")
     # test_learning_speed(0.5, 3, 0.5, init=True)
     print("test batch size")
-    res = test_batch_size(45, 50, 5)
+    res = test_batch_size(45, 50, 5, debug=True)
     print(res)
     # print("Test load parameters")
     # test_load_params()
