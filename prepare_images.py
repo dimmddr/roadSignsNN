@@ -12,7 +12,7 @@ IMG_LAYERS = 3
 SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
-COVER_PERCENT = 0.4
+COVER_PERCENT = 0.6
 WIDTH = 2
 HEIGHT = 1
 LAYERS = 0
@@ -35,6 +35,7 @@ def split_into_subimgs(img, labels, sub_img_shape, lbl_array, debug, step=1):
                               strides=(img.strides[2] * step, img.strides[0], img.strides[1], img.strides[2]))
     index = 0
 
+    coords = dict()
     for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
         for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
@@ -58,9 +59,10 @@ def split_into_subimgs(img, labels, sub_img_shape, lbl_array, debug, step=1):
                 cv2.destroyAllWindows()
 
             lbl_array[index] = is_cover
+            coords[index] = window
             index += 1
         index += int(sub_img_shape[WIDTH] / step)
-    return result_array
+    return result_array, coords
 
 
 def prepare(img_path, labels, debug=False):
@@ -76,10 +78,11 @@ def prepare(img_path, labels, debug=False):
     lbl_res = np.zeros(shape=int(
         (res_img.shape[WIDTH] - SUB_IMG_WIDTH + 1) / step * (res_img.shape[HEIGHT] - SUB_IMG_HEIGHT + 1) / step + (
             SUB_IMG_WIDTH / step * res_img.shape[HEIGHT] / step)))
-    res = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH), labels=labels,
-                             lbl_array=lbl_res, step=step, debug=debug)
+    res, coords = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+                                     labels=labels,
+                                     lbl_array=lbl_res, step=step, debug=debug)
 
-    return res, lbl_res
+    return res, lbl_res, coords
 
 
 def show_sign(img_path, lbl):

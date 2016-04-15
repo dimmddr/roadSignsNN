@@ -159,7 +159,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
         res = []
 
         # ind = int(np.floor(len(train_set_complete) * 0.75))
-        ind = 100
+        ind = 20
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
             alfa = 0.01
@@ -187,12 +187,12 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 neg_imgs = all_imgs[:neg_size]
                 imgs = np.concatenate((imgs, neg_imgs))
                 lbls = np.concatenate((lbls, neg_lbls))
-                # Set seed before every shuffle for consistent shuffle
-                np.random.seed(42)
-                np.random.shuffle(lbls)
-                np.random.seed(42)
-                np.random.shuffle(imgs)
-                net.learning(dataset=imgs, labels=lbls, debug_print=debug)
+                # # Set seed before every shuffle for consistent shuffle
+                # np.random.seed(42)
+                # np.random.shuffle(lbls)
+                # np.random.seed(42)
+                # np.random.shuffle(imgs)
+                net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=200)
 
             # net.save_params()
             # net.load_params()
@@ -200,20 +200,21 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
             # show_some_weights(net)
 
             print("Testing...")
-            test_img = np.array(list(train_set_without_negatives.keys())[:ind])
+            test_img = np.array(list(train_set_without_negatives.keys())[ind:])
             lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
-            imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-            y_pred = net.predict(imgs)
-            tmp = lbls - y_pred
+            for i in range(test_img.shape[0]):
+                imgs, lbls = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
+                y_pred = net.predict(imgs)
+                tmp = lbls - y_pred
 
-            tp = np.sum((y_pred == 1) & (lbls == 1))
-            tn = np.sum((y_pred == 0) & (lbls == 0))
-            fp = np.sum(tmp == -1)
-            fn = np.sum(tmp == 1)
-            f1_score = 2 * tp / (2 * tp + fn + fp)
-            print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
-                  .format(f1_score, tp, tn, fp, fn))
-            res.append((batch_size, f1_score, tp, tn, fp, fn))
+                tp = np.sum((y_pred == 1) & (lbls == 1))
+                tn = np.sum((y_pred == 0) & (lbls == 0))
+                fp = np.sum(tmp == -1)
+                fn = np.sum(tmp == 1)
+                f1_score = 2 * tp / (2 * tp + fn + fp)
+                print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
+                      .format(f1_score, tp, tn, fp, fn))
+                res.append((batch_size, f1_score, tp, tn, fp, fn))
         return res
 
 
@@ -243,7 +244,7 @@ def test_all():
     # print("Test learning speed")
     # test_learning_speed(0.5, 3, 0.5, init=True)
     print("test batch size")
-    res = test_batch_size(45, 50, 5, debug=True)
+    res = test_batch_size(100, 150, 50, debug=False)
     print(res)
     # print("Test load parameters")
     # test_load_params()

@@ -128,7 +128,8 @@ class Network(object):
 
         self.train_fn = theano.function([self.input, self.target], loss, updates=self.updates,
                                         allow_input_downcast=True)
-        self.predict_values = theano.function([self.input], T.argmax(self.prediction), allow_input_downcast=True)
+        self.predict_values = theano.function([self.input], T.argmax(self.prediction, axis=1),
+                                              allow_input_downcast=True)
 
     def learning(self, dataset, labels, n_epochs=200, debug_print=False):
         dataset_first = convert48to24(dataset)
@@ -146,7 +147,7 @@ class Network(object):
             train_batches = 0
             # start_time = timeit.default_timer()
 
-            for batch in iterate_minibatches(train_set_x, train_set_y, self.batch_size, shuffle=False):
+            for batch in iterate_minibatches(train_set_x, train_set_y, self.batch_size, shuffle=True):
                 inputs, targets = batch
                 train_err += self.train_fn(inputs, targets)
                 train_batches += 1
