@@ -80,8 +80,9 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
 
 class Network(object):
-    def __init__(self, batch_size=100, filter_numbers=10, filter_shape=(SUB_IMG_LAYERS, 7, 7), pool_size=(2, 2),
-                 hidden_layer_size=500, learning_rate=0.01, random_state=42):
+    def __init__(self, batch_size=100, filter_numbers=(25, 25), filter_shape_first_convlayer=(SUB_IMG_LAYERS, 5, 5),
+                 filter_shape_second_convlayer=(SUB_IMG_LAYERS, 3, 3), pool_size=(2, 2), hidden_layer_size=500,
+                 learning_rate=0.01, random_state=42):
         self.input = T.tensor4('inputs')
         self.target = T.ivector('targets')
         self.learning_rate = learning_rate
@@ -96,8 +97,20 @@ class Network(object):
         # Сверточный слой, принимает регион исходного изображения размером 3х12х12
         self.network = lasagne.layers.Conv2DLayer(
             incoming=self.network,
-            num_filters=filter_numbers,
-            filter_size=(filter_shape[1], filter_shape[2]),
+            num_filters=filter_numbers[0],
+            filter_size=(filter_shape_first_convlayer[1], filter_shape_first_convlayer[2]),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform()
+        )
+
+        # Poolling layer
+        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
+
+        # Второй сверточный слой
+        self.network = lasagne.layers.Conv2DLayer(
+            incoming=self.network,
+            num_filters=filter_numbers[1],
+            filter_size=(filter_shape_second_convlayer[1], filter_shape_second_convlayer[2]),
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.GlorotUniform()
         )
@@ -167,10 +180,14 @@ class Network(object):
         return res
 
     def save_params(self, filename):
-        np.savez(file=filename + '.npz', *lasagne.layers.get_all_param_values(self.network))
+        name = filename
+        print(name)
+        np.savez(name, *lasagne.layers.get_all_param_values(self.network))
 
     def load_params(self, filename):
-        with np.load(filename + '.npz') as f:
+        name = filename + '.npz'
+        print(name)
+        with np.load(name) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(self.network, param_values)
         #

@@ -163,7 +163,8 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
             alfa = 0.01
-            net = nn.Network(learning_rate=alfa, filter_numbers=100, batch_size=batch_size, random_state=123)
+            filter_numbers = (100, 50)
+            net = nn.Network(learning_rate=alfa, filter_numbers=filter_numbers, batch_size=batch_size, random_state=123)
             train_set = np.array(list(train_set_without_negatives.keys()))
             train_set.sort()
             train_set = train_set[:ind]
@@ -172,7 +173,8 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
             for i in range(0, ind):
                 if debug:
                     print(i)
-                all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
+                all_imgs, all_lbls, coords = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                                    lbl_train[i])
                 if debug:
                     print("Image prepared")
                 imgs = all_imgs[all_lbls == 1]
@@ -187,15 +189,10 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 neg_imgs = all_imgs[:neg_size]
                 imgs = np.concatenate((imgs, neg_imgs))
                 lbls = np.concatenate((lbls, neg_lbls))
-                # # Set seed before every shuffle for consistent shuffle
-                # np.random.seed(42)
-                # np.random.shuffle(lbls)
-                # np.random.seed(42)
-                # np.random.shuffle(imgs)
                 net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=200)
 
-            # net.save_params()
-            # net.load_params()
+            net.save_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))
+            net.load_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))
 
             # show_some_weights(net)
 
@@ -203,7 +200,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
             test_img = np.array(list(train_set_without_negatives.keys())[ind:])
             lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
             for i in range(test_img.shape[0]):
-                imgs, lbls = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
+                imgs, lbls, coords = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
                 y_pred = net.predict(imgs)
                 tmp = lbls - y_pred
 
@@ -215,6 +212,10 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
                       .format(f1_score, tp, tn, fp, fn))
                 res.append((batch_size, f1_score, tp, tn, fp, fn))
+                tmp = y_pred == 1
+                tmp = np.arange(lbls.shape[0])[tmp]
+                rects = [coords.get(key, None) for key in tmp]
+                prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
         return res
 
 

@@ -106,3 +106,12 @@ def show_roi(roi_list):
         cv2.imshow("img", roi)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+
+def show_rectangles(filename, rectangles_list):
+    img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+    for rect in rectangles_list:
+        if rect is not None:
+            cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
+    cv2.imshow(filename, img)
+    cv2.waitKey()
