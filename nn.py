@@ -166,25 +166,13 @@ class Network(object):
             res[i * size: i * size + size] = self.predict_values(dataset_first[i * size: i * size + size, :, :, :])
         return res
 
-        # def save_params(self):
-        #     save_file = open('params', 'wb')
-        #     pickle.dump(self.layer0_convPool.W, save_file, -1)
-        #     pickle.dump(self.layer0_convPool.b, save_file, -1)
-        #     pickle.dump(self.layer1_hidden.W, save_file, -1)
-        #     pickle.dump(self.layer1_hidden.b, save_file, -1)
-        #     pickle.dump(self.layer2_logRegr.W, save_file, -1)
-        #     pickle.dump(self.layer2_logRegr.b, save_file, -1)
-        #     save_file.close()
-        #
-        # def load_params(self):
-        #     save_file = open('params', 'rb')
-        #     self.layer0_convPool.W = pickle.load(save_file)
-        #     self.layer0_convPool.b = pickle.load(save_file)
-        #     self.layer1_hidden.W = pickle.load(save_file)
-        #     self.layer1_hidden.b = pickle.load(save_file)
-        #     self.layer2_logRegr.W = pickle.load(save_file)
-        #     self.layer2_logRegr.b = pickle.load(save_file)
-        #     save_file.close()
+    def save_params(self, filename):
+        np.savez(file=filename + '.npz', *lasagne.layers.get_all_param_values(self.network))
+
+    def load_params(self, filename):
+        with np.load(filename + '.npz') as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+        lasagne.layers.set_all_param_values(self.network, param_values)
         #
         # def get_internal_state(self, dataset):
         #     dataset_first = convert48to12(dataset)
