@@ -17,7 +17,7 @@ annotation_path = dataset_path + 'frameAnnotations.csv'
 # train_set_complete = np.empty(0)
 train_set_without_negatives = dict()
 
-NEGATIVE_MULTIPLIER = 1
+NEGATIVE_MULTIPLIER = 2
 
 
 def test_init(seed=16):
@@ -80,76 +80,21 @@ def write_results(result: list, test_name):
         os.chdir(wd)
 
 
-# test for train speed
-def show_some_weights(net):
-    (w, b) = net.layer0_convPool.params
-    # prepare_images.show_roi(w.get_value())
-    print(w.get_value())
-
-
-def test_learning_speed(min_speed=1., max_speed=2., step_size=1., init=False):
-    # I don't want to do it multiply times, it is time costly to read large file
+def test_classificator(seed=16, init=False):
     if not init:
         test_init()
+        ind = int(np.floor(len(train_set_without_negatives) * 0.75))
+        signs, labels, labels_dict = prepare_images.get_roi_from_images(train_set_without_negatives.values(),
+                                                                        dataset_path)
+        np.random.seed(seed)
+        np.random.shuffle(signs)
+        np.random.seed(seed)
+        np.random.shuffle(labels)
+        train_set_sign = signs[:ind]
+        train_set_lbls = labels[:ind]
+        test_set_sign = signs[ind:]
+        test_set_lbls = labels[ind:]
 
-        # ind = int(np.floor(len(train_set_complete) * 0.75))
-        ind = 10
-        for alf in np.linspace(min_speed, max_speed, num=np.floor((max_speed - min_speed) / step_size)):
-            print(alf)
-            alfa = alf
-            net = nn.Network(learning_rate=alfa, batch_size=5, random_state=123)
-            train_set = np.array(list(train_set_without_negatives.keys()))
-            train_set.sort()
-            train_set = train_set[:ind]
-            lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
-
-            for i in range(0, ind):
-                print(i)
-                all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'), lbl_train[i])
-                print("Image prepared")
-                imgs = all_imgs[all_lbls == 1]
-                # prepare_images.show_roi(imgs)
-                lbls = all_lbls[all_lbls == 1]
-                # Set seed before every shuffle for consistent shuffle
-                np.random.seed(42)
-                np.random.shuffle(all_lbls)
-                np.random.seed(42)
-                np.random.shuffle(all_imgs)
-                neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
-                neg_lbls = all_lbls[:neg_size]
-                neg_imgs = all_imgs[:neg_size]
-                # print(lbls)
-                imgs = np.concatenate((imgs, neg_imgs))
-                lbls = np.concatenate((lbls, neg_lbls))
-                # print(lbls)
-                print(imgs.shape)
-                print(lbls.shape)
-                # Set seed before every shuffle for consistent shuffle
-                np.random.seed(42)
-                np.random.shuffle(lbls)
-                np.random.seed(42)
-                np.random.shuffle(imgs)
-                net.learning(dataset=imgs, labels=lbls, debug_print=True)
-
-            net.save_params()
-            net.load_params()
-
-            # show_some_weights(net)
-
-            print("Testing...")
-            test_img = np.array(list(train_set_without_negatives.keys())[:ind])
-            lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
-            imgs, lbls = prepare_images.prepare(dataset_path + test_img[0].decode('utf8'), lbl_test[0])
-            y_pred = net.predict_values(imgs)
-            tmp = lbls - y_pred
-
-            tp = np.sum((y_pred == 1) & (lbls == 1))
-            tn = np.sum((y_pred == 0) & (lbls == 0))
-            fp = np.sum(tmp == -1)
-            fn = np.sum(tmp == 1)
-            f1_score = 2 * tp / (2 * tp + fn + fp)
-            print("True positive = {}, true negative = {}, false positive = {}, false negative = {}\nf1 score = {}"
-                  .format(tp, tn, fp, fn, f1_score))
 
 
 def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=False):
@@ -159,7 +104,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
         res = []
 
         # ind = int(np.floor(len(train_set_complete) * 0.75))
-        ind = 20
+        ind = 10
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
             alfa = 0.01
@@ -179,11 +124,13 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                     print("Image prepared")
                 imgs = all_imgs[all_lbls == 1]
                 lbls = all_lbls[all_lbls == 1]
+                print(imgs.shape, lbls.shape)
                 neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
                 neg_lbls = all_lbls[:neg_size]
                 neg_imgs = all_imgs[:neg_size]
                 imgs = np.concatenate((imgs, neg_imgs))
                 lbls = np.concatenate((lbls, neg_lbls))
+                print(imgs.shape, lbls.shape)
                 net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=200)
 
             net.save_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))
@@ -192,7 +139,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
             # show_some_weights(net)
 
             print("Testing...")
-            test_img = np.array(list(train_set_without_negatives.keys())[ind:])
+            test_img = np.array(list(train_set_without_negatives.keys())[ind:ind + 10])
             lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
             for i in range(test_img.shape[0]):
                 imgs, lbls, coords = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
@@ -237,8 +184,6 @@ def test_load_params(batch_size=45, random_state=123, init=False):
 
 
 def test_all():
-    # print("Test learning speed")
-    # test_learning_speed(0.5, 3, 0.5, init=True)
     print("test batch size")
     res = test_batch_size(40, 50, 10, debug=True)
     print(res)

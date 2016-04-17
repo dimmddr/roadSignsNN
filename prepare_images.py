@@ -30,8 +30,8 @@ def compute_covering(window, label):
 
 
 def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
-    shape = (int(np.floor((img.shape[HEIGHT] - sub_img_shape[HEIGHT]) / step) + 1),
-             int(np.floor((img.shape[WIDTH] - sub_img_shape[WIDTH]) / step) + 1),
+    shape = (int(np.floor((img.shape[HEIGHT] - sub_img_shape[HEIGHT]) / step)),
+             int(np.floor((img.shape[WIDTH] - sub_img_shape[WIDTH]) / step)),
              SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
     # shape = (lbl_array.shape[0], SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
     result_array = as_strided(img, shape=shape,
@@ -40,21 +40,22 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
                                   img.strides[2],
                                   img.strides[2] * step,
                                   img.strides[0], img.strides[1], img.strides[2]))
-    result_array = result_array.reshape(
+    result_array.shape = (
         result_array.shape[0] * result_array.shape[1],
         result_array.shape[2],
         result_array.shape[3],
-        result_array.shape[4])
+        result_array.shape[4]
+    )
     lbl_array = np.zeros(result_array.shape[0])
     index = 0
 
     coords = dict()
-    for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT] + 1, step):
-        for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH] + 1, step):
+    for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
+        for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
             window = Rectangle(ii, i, ii + sub_img_shape[HEIGHT], i + sub_img_shape[WIDTH])
             cover = np.array([compute_covering(window=window,
-                                               label=Rectangle(lbl[1], lbl[0], lbl[3], lbl[2])) for lbl in labels])
+                                               label=Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) for lbl in labels])
             is_cover = int(np.any(cover > COVER_PERCENT))
             # if debug and (1 == is_cover):
             #     roi = img[:, i: i + sub_img_shape[HEIGHT], ii: ii + sub_img_shape[WIDTH]]
@@ -123,3 +124,20 @@ def show_rectangles(filename, rectangles_list):
             cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
     cv2.imshow(filename, img)
     cv2.waitKey()
+
+
+# Probably temp function before I fix localization
+def get_roi_from_images(images, img_path):
+    res_roi = []
+    res_label = []
+    label_dict = dict()
+    for image in images:
+        img = cv2.imread(img_path + image.filename.decode('utf8'), cv2.IMREAD_UNCHANGED)
+        for sign in image.signs:
+            if sign.label not in label_dict:
+                label_dict[sign.label] = len(label_dict)
+            (x1, y1, x2, y2) = sign.coord
+            roi = img[y1:y2, x1:x2, :]
+            res_roi.append(np.array(roi[:, :, 0], roi[:, :, 1], roi[:, :, 2]))
+            res_label.append(label_dict[sign.label])
+    return res_roi, res_label, label_dict

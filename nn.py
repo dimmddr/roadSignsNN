@@ -80,6 +80,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
+# TODO: Make one class for all neural net, include classifier
 class Network(object):
     def __init__(self, batch_size=100, filter_numbers=(25, 25), filter_shape_first_convlayer=(SUB_IMG_LAYERS, 5, 5),
                  filter_shape_second_convlayer=(SUB_IMG_LAYERS, 3, 3), pool_size=(2, 2), hidden_layer_size=500,
@@ -232,3 +233,65 @@ class Network(object):
         with np.load(name) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(self.network, param_values)
+
+
+class Clf(object):
+    # Convolutional and Pooling layer or two, spatial pooling layer and FC layer in the end
+    def __init__(self, batch_size=100, filter_numbers=(25, 25), filter_shape_first_convlayer=(SUB_IMG_LAYERS, 5, 5),
+                 filter_shape_second_convlayer=(SUB_IMG_LAYERS, 3, 3), pool_size=(2, 2), hidden_layer_size=500,
+                 output_size=30, learning_rate=0.01, random_state=42):
+        self.input = T.tensor4('inputs')
+        self.target = T.ivector('targets')
+        self.learning_rate = learning_rate
+        self.random_state = random_state
+        self.batch_size = batch_size
+
+        # Сверточный слой, принимает регион исходного изображения размером 3х12х12
+        self.network = lasagne.layers.Conv2DLayer(
+            incoming=self.input,
+            num_filters=filter_numbers[0],
+            filter_size=(filter_shape_first_convlayer[1], filter_shape_first_convlayer[2]),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform()
+        )
+
+        # Poolling layer
+        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
+
+        # Второй сверточный слой
+        self.network = lasagne.layers.Conv2DLayer(
+            incoming=self.network,
+            num_filters=filter_numbers[1],
+            filter_size=(filter_shape_second_convlayer[1], filter_shape_second_convlayer[2]),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform()
+        )
+
+        # Poolling layer
+        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
+
+        # Fully-connected layer with 50% dropout
+        self.network = lasagne.layers.DenseLayer(
+            lasagne.layers.dropout(self.network, p=.5),
+            num_units=hidden_layer_size,
+            nonlinearity=lasagne.nonlinearities.rectify
+        )
+
+        # Softmax layer with dropout.
+        self.network = lasagne.layers.DenseLayer(
+            lasagne.layers.dropout(self.network, p=.5),
+            num_units=output_size,
+            nonlinearity=lasagne.nonlinearities.softmax
+        )
+        self.prediction = lasagne.layers.get_output(self.network)
+        loss = lasagne.objectives.categorical_crossentropy(self.prediction, self.target)
+        self.loss = loss.mean()
+
+        self.params = lasagne.layers.get_all_params(self.network, trainable=True)
+        self.updates = lasagne.updates.nesterov_momentum(
+            self.loss, self.params, learning_rate=self.learning_rate, momentum=0.9)
+
+        self.train_fn = theano.function([self.input, self.target], loss, updates=self.updates,
+                                        allow_input_downcast=True)
+        self.predict_values = theano.function([self.input], T.argmax(self.prediction, axis=1),
+                                              allow_input_downcast=True)
