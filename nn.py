@@ -248,9 +248,15 @@ class Clf(object):
         self.random_state = random_state
         self.batch_size = batch_size
 
+        # Input layer
+        self.network = lasagne.layers.InputLayer(
+            shape=(batch_size, SUB_IMG_LAYERS, None, None),
+            input_var=self.input
+        )
+
         # Сверточный слой, принимает регион исходного изображения размером 3х12х12
         self.network = lasagne.layers.Conv2DLayer(
-            incoming=self.input,
+            incoming=self.network,
             num_filters=filter_numbers[0],
             filter_size=(filter_shape_first_convlayer[1], filter_shape_first_convlayer[2]),
             nonlinearity=lasagne.nonlinearities.rectify,

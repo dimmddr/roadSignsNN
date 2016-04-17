@@ -11,7 +11,7 @@ class SpatialPoolingLayer(lasagne.layers.Layer):
     # Maybe later I change this behaviour
     def __init__(self, incoming, bin_sizes, **kwargs):
         super(SpatialPoolingLayer, self).__init__(incoming, **kwargs)
-        self.bin_sizes = self.add_param(bin_sizes, (len(bin_sizes),), name="bin_sizes")
+        self.bin_sizes = self.add_param(np.array(bin_sizes), (len(bin_sizes),), name="bin_sizes")
 
     def get_output_shape_for(self, input_shape):
         return np.sum(np.power(self.bin_sizes, 2))
