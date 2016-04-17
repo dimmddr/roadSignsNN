@@ -1,5 +1,6 @@
 import lasagne
 import numpy as np
+from theano import tensor as T
 
 WIDTH_INDEX = 3
 HEIGHT_INDEX = 2
@@ -14,7 +15,7 @@ class SpatialPoolingLayer(lasagne.layers.Layer):
         self.bin_sizes = self.add_param(np.array(bin_sizes), (len(bin_sizes),), name="bin_sizes")
 
     def get_output_shape_for(self, input_shape):
-        return np.sum(np.power(self.bin_sizes, 2))
+        return T.sum(T.power(self.bin_sizes, 2))
 
     def get_output_for(self, input, **kwargs):
         layers = []
