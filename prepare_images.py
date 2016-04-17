@@ -138,6 +138,6 @@ def get_roi_from_images(images, img_path):
                 label_dict[sign.label] = len(label_dict)
             (x1, y1, x2, y2) = sign.coord
             roi = img[y1:y2, x1:x2, :]
-            res_roi.append(np.array(roi[:, :, 0], roi[:, :, 1], roi[:, :, 2]))
+            res_roi.append(np.array([roi[:, :, 0], roi[:, :, 1], roi[:, :, 2]]))
             res_label.append(label_dict[sign.label])
     return res_roi, res_label, label_dict
