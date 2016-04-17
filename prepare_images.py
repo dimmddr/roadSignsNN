@@ -43,20 +43,20 @@ def split_into_subimgs(img, labels, sub_img_shape, lbl_array, debug, step=1):
             cover = np.array([compute_covering(window=window,
                                                label=Rectangle(lbl[1], lbl[0], lbl[3], lbl[2])) for lbl in labels])
             is_cover = int(np.any(cover > COVER_PERCENT))
-            if debug and (1 == is_cover):
-                roi = img[:, i: i + sub_img_shape[HEIGHT], ii: ii + sub_img_shape[WIDTH]]
-                (r, g, b) = (roi[0], roi[1], roi[2])
-                roi = cv2.merge((r, g, b))
-                cv2.imshow("from labels", roi)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
-
-                roi = result_array[index]
-                (r, g, b) = (roi[0], roi[1], roi[2])
-                roi = cv2.merge((r, g, b))
-                cv2.imshow("from strides", roi)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+            # if debug and (1 == is_cover):
+            #     roi = img[:, i: i + sub_img_shape[HEIGHT], ii: ii + sub_img_shape[WIDTH]]
+            #     (r, g, b) = (roi[0], roi[1], roi[2])
+            #     roi = cv2.merge((r, g, b))
+            #     cv2.imshow("from labels", roi)
+            #     cv2.waitKey(0)
+            #     cv2.destroyAllWindows()
+            #
+            #     roi = result_array[index]
+            #     (r, g, b) = (roi[0], roi[1], roi[2])
+            #     roi = cv2.merge((r, g, b))
+            #     cv2.imshow("from strides", roi)
+            #     cv2.waitKey(0)
+            #     cv2.destroyAllWindows()
 
             lbl_array[index] = is_cover
             coords[index] = window

@@ -1,3 +1,4 @@
+import timeit
 from collections import namedtuple
 
 import lasagne
@@ -86,7 +87,7 @@ class Network(object):
         self.input = T.tensor4('inputs')
         self.target = T.ivector('targets')
         self.learning_rate = learning_rate
-        self.rng = np.random.RandomState(random_state)
+        self.random_state = random_state
         self.batch_size = batch_size
         # Input layer
         self.network = lasagne.layers.InputLayer(
@@ -144,12 +145,28 @@ class Network(object):
         self.predict_values = theano.function([self.input], T.argmax(self.prediction, axis=1),
                                               allow_input_downcast=True)
 
+        self.test_prediction = lasagne.layers.get_output(self.network, deterministic=True)
+        self.test_loss = lasagne.objectives.categorical_crossentropy(self.test_prediction, self.target)
+        self.test_loss = self.test_loss.mean()
+
+        self.test_acc = T.mean(T.eq(T.argmax(self.test_prediction, axis=1), self.target), dtype=theano.config.floatX)
+        self.val_fn = theano.function([self.input, self.target], [self.test_loss, self.test_acc],
+                                      allow_input_downcast=True)
+
     def learning(self, dataset, labels, n_epochs=200, debug_print=False):
         dataset_first = convert48to24(dataset)
-        datasets = prepare_dataset(dataset_first,
-                                   labels)
-        train_set_x, train_set_y = (dataset_first, labels)
-        # train_set_x, train_set_y = datasets
+        np.random.seed(self.random_state)
+        np.random.shuffle(dataset_first)
+        np.random.seed(self.random_state)
+        np.random.shuffle(labels)
+        validation_index = int(dataset_first.shape[0] * 0.6)
+        test_index = validation_index + int(dataset_first.shape[0] * 0.2)
+        train_set_x = dataset_first[:validation_index]
+        train_set_y = labels[:validation_index]
+        validation_set_x = dataset_first[validation_index:test_index]
+        validation_set_y = labels[validation_index:test_index]
+        test_set_x = dataset_first[test_index:]
+        test_set_y = labels[test_index:]
 
         ###############
         # TRAIN MODEL #
@@ -158,17 +175,42 @@ class Network(object):
         for epoch in range(n_epochs):
             train_err = 0
             train_batches = 0
-            # start_time = timeit.default_timer()
+            start_time = timeit.default_timer()
 
             for batch in iterate_minibatches(train_set_x, train_set_y, self.batch_size, shuffle=True):
                 inputs, targets = batch
                 train_err += self.train_fn(inputs, targets)
                 train_batches += 1
 
-                # end_time = timeit.default_timer()
-                #
-                # print("Epoch {} of {} took {:.3f}s".format(
-                #     epoch + 1, n_epochs, end_time - start_time))
+            val_err = 0
+            val_acc = 0
+            val_batches = 0
+            for batch in iterate_minibatches(validation_set_x, validation_set_y, self.batch_size, shuffle=False):
+                inputs, targets = batch
+                err, acc = self.val_fn(inputs, targets)
+                val_err += err
+                val_acc += acc
+                val_batches += 1
+            if debug_print:
+                end_time = timeit.default_timer()
+
+                print("Epoch {} of {} took {:.3f}s".format(
+                    epoch + 1, n_epochs, end_time - start_time))
+
+        test_err = 0
+        test_acc = 0
+        test_batches = 0
+        for batch in iterate_minibatches(test_set_x, test_set_y, self.batch_size, shuffle=False):
+            inputs, targets = batch
+            err, acc = self.val_fn(inputs, targets)
+            test_err += err
+            test_acc += acc
+            test_batches += 1
+        if debug_print:
+            print("Final results:")
+            print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+            print("  test accuracy:\t\t{:.2f} %".format(
+                test_acc / test_batches * 100))
 
     def predict(self, dataset):
         dataset_first = convert48to24(dataset)
@@ -190,28 +232,3 @@ class Network(object):
         with np.load(name) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(self.network, param_values)
-        #
-        # def get_internal_state(self, dataset):
-        #     dataset_first = convert48to12(dataset)
-        #     size = self.batch_size
-        #     pred = theano.function(
-        #         inputs=[self.layer0_convPool.input],
-        #         outputs=(
-        #             self.layer1_hidden.input,
-        #             self.layer2_logRegr.input,
-        #             self.layer2_logRegr.dot_product,
-        #             self.layer2_logRegr.p_y_given_x
-        #         )
-        #     )
-        #     res = np.empty((dataset.shape[0], 4))
-        #     # for i in range(dataset.shape[0] // size):
-        #     for i in range(10):
-        #         # datasets = prepare_dataset()
-        #         # res[i * size: i * size + size] = pred(dataset_first[i * size: i * size + size, :, :, :])
-        #         tmp = pred(dataset_first[i * size: i * size + size, :, :, :])
-        #
-        #         print("layer1_hidden.input: {}".format(tmp[0][:5]))
-        #         print("layer2_logRegr.input: {}".format(tmp[1][:5]))
-        #         print("layer2_logRegr.dot_product: {}".format(tmp[2][:5]))
-        #         print("layer2_logRegr.p_y_given_x: {}".format(tmp[3][:5]))
-        #         # return res

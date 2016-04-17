@@ -174,16 +174,11 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 if debug:
                     print(i)
                 all_imgs, all_lbls, coords = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                                    lbl_train[i])
+                                                                    lbl_train[i], debug=debug)
                 if debug:
                     print("Image prepared")
                 imgs = all_imgs[all_lbls == 1]
                 lbls = all_lbls[all_lbls == 1]
-                # Set seed before every shuffle for consistent shuffle
-                np.random.seed(42)
-                np.random.shuffle(all_lbls)
-                np.random.seed(42)
-                np.random.shuffle(all_imgs)
                 neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
                 neg_lbls = all_lbls[:neg_size]
                 neg_imgs = all_imgs[:neg_size]
@@ -245,7 +240,7 @@ def test_all():
     # print("Test learning speed")
     # test_learning_speed(0.5, 3, 0.5, init=True)
     print("test batch size")
-    res = test_batch_size(100, 150, 50, debug=False)
+    res = test_batch_size(40, 50, 10, debug=True)
     print(res)
     # print("Test load parameters")
     # test_load_params()
