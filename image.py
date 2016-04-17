@@ -1,6 +1,6 @@
 class Image(object):
-    def __init__(self, file_name):
-        self.file_name = file_name
+    def __init__(self, filename):
+        self.filename = filename
         self.signs = []
 
     def add_sign(self, label, coordinates):

@@ -6,6 +6,8 @@ import numpy as np
 import theano
 from theano import tensor as T
 
+import layers
+
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
 
 SUB_IMG_WIDTH = 24
@@ -238,8 +240,8 @@ class Network(object):
 class Clf(object):
     # Convolutional and Pooling layer or two, spatial pooling layer and FC layer in the end
     def __init__(self, batch_size=100, filter_numbers=(25, 25), filter_shape_first_convlayer=(SUB_IMG_LAYERS, 5, 5),
-                 filter_shape_second_convlayer=(SUB_IMG_LAYERS, 3, 3), pool_size=(2, 2), hidden_layer_size=500,
-                 output_size=30, learning_rate=0.01, random_state=42):
+                 filter_shape_second_convlayer=(SUB_IMG_LAYERS, 3, 3), pool_size=(2, 2), output_size=30,
+                 learning_rate=0.01, random_state=42):
         self.input = T.tensor4('inputs')
         self.target = T.ivector('targets')
         self.learning_rate = learning_rate
@@ -267,13 +269,14 @@ class Clf(object):
             W=lasagne.init.GlorotUniform()
         )
 
-        # Poolling layer
-        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
+        # Spatial Poolling layer
+        bin_sizes = (1, 2, 3, 4)
+        self.network = layers.SpatialPoolingLayer(self.network, bin_sizes=bin_sizes, name="Spatial Layer")
 
         # Fully-connected layer with 50% dropout
         self.network = lasagne.layers.DenseLayer(
             lasagne.layers.dropout(self.network, p=.5),
-            num_units=hidden_layer_size,
+            num_units=int(np.prod(bin_sizes)),
             nonlinearity=lasagne.nonlinearities.rectify
         )
 
@@ -295,3 +298,50 @@ class Clf(object):
                                         allow_input_downcast=True)
         self.predict_values = theano.function([self.input], T.argmax(self.prediction, axis=1),
                                               allow_input_downcast=True)
+
+    def learning(self, dataset, labels, n_epochs=200, debug_print=False):
+        dataset
+        np.random.seed(self.random_state)
+        np.random.shuffle(dataset)
+        np.random.seed(self.random_state)
+        np.random.shuffle(labels)
+
+        ###############
+        # TRAIN MODEL #
+        ###############
+        print('... training')
+        for epoch in range(n_epochs):
+            train_err = 0
+            train_batches = 0
+            start_time = timeit.default_timer()
+
+            for batch in iterate_minibatches(dataset, labels, self.batch_size, shuffle=True):
+                inputs, targets = batch
+                train_err += self.train_fn(inputs, targets)
+                train_batches += 1
+
+            if debug_print:
+                end_time = timeit.default_timer()
+
+                print("Epoch {} of {} took {:.3f}s".format(
+                    epoch + 1, n_epochs, end_time - start_time))
+
+    def predict(self, dataset):
+        size = self.batch_size
+        res = np.zeros(dataset.shape[0])
+        for i in range(dataset.shape[0] // size):
+            # datasets = prepare_dataset()
+            res[i * size: i * size + size] = self.predict_values(dataset[i * size: i * size + size, :, :, :])
+        return res
+
+    def save_params(self, filename):
+        name = filename
+        print(name)
+        np.savez(name, *lasagne.layers.get_all_param_values(self.network))
+
+    def load_params(self, filename):
+        name = filename + '.npz'
+        print(name)
+        with np.load(name) as f:
+            param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+        lasagne.layers.set_all_param_values(self.network, param_values)

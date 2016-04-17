@@ -80,7 +80,7 @@ def write_results(result: list, test_name):
         os.chdir(wd)
 
 
-def test_classificator(seed=16, init=False):
+def test_classification(seed=16, init=False):
     if not init:
         test_init()
         ind = int(np.floor(len(train_set_without_negatives) * 0.75))
@@ -94,7 +94,18 @@ def test_classificator(seed=16, init=False):
         train_set_lbls = labels[:ind]
         test_set_sign = signs[ind:]
         test_set_lbls = labels[ind:]
+        clf = nn.Clf(batch_size=50, output_size=len(labels_dict))
+        clf.learning(train_set_sign, train_set_lbls)
+        y_pred = clf.predict(test_set_sign)
+        tmp = test_set_lbls - y_pred
 
+        tp = np.sum((y_pred == 1) & (test_set_lbls == 1))
+        tn = np.sum((y_pred == 0) & (test_set_lbls == 0))
+        fp = np.sum(tmp == -1)
+        fn = np.sum(tmp == 1)
+        f1_score = 2 * tp / (2 * tp + fn + fp)
+        print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
+              .format(f1_score, tp, tn, fp, fn))
 
 
 def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=False):
@@ -184,11 +195,13 @@ def test_load_params(batch_size=45, random_state=123, init=False):
 
 
 def test_all():
-    print("test batch size")
-    res = test_batch_size(40, 50, 10, debug=True)
-    print(res)
+    # print("test batch size")
+    # res = test_batch_size(40, 50, 10, debug=True)
+    # print(res)
     # print("Test load parameters")
     # test_load_params()
+    print("Test Classification")
+    test_classification()
 
 
 if __name__ == '__main__':
