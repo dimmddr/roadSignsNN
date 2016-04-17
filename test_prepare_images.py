@@ -38,4 +38,6 @@ class TestPrepareImages(TestCase):
             (x1, y1, x2, y2) = (coords[j].xmin, coords[j].ymin, coords[j].xmax, coords[j].ymax)
             test_img_roi = np.array(
                 [test_img[y1:y2, x1:x2, 0], test_img[y1:y2, x1:x2, 1], test_img[y1:y2, x1:x2, 2]])
+            # if j > 325:
+            #     prepare_images.show_roi([imgs[j], test_img_roi])
             self.assertTrue(np.allclose(imgs[j], test_img_roi), msg="In imgs[{}]".format(j))

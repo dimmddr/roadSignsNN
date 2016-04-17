@@ -49,8 +49,8 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
     index = 0
 
     coords = dict()
-    for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
-        for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
+    for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT] + 1, step):
+        for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH] + 1, step):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
             window = Rectangle(ii, i, ii + sub_img_shape[HEIGHT], i + sub_img_shape[WIDTH])
             cover = np.array([compute_covering(window=window,
