@@ -28,14 +28,14 @@ class TestPrepareImages(TestCase):
         images = np.array(list(files.keys()))
         images.sort()
         lbl = np.array([files.get(key).get_coordinates() for key in images])
+        print(images[0].decode('utf8'))
         imgs, lbls, coords = prepare_images.prepare(dataset_path + images[0].decode('utf8'), lbl[0])
         test_img = cv2.imread(dataset_path + images[0].decode('utf8'), cv2.IMREAD_UNCHANGED)
-        test_img = cv2.normalize(test_img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+        # noinspection PyAugmentAssignment
+        test_img = test_img / 255
         for j in range(lbls.shape[0]):
-            if coords[j] is not None:
-                # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
-                (x1, y1, x2, y2) = coords[j]
-                test_img_roi = np.array(
-                    [test_img[y1:y2, x1:x2, 0], test_img[y1:y2, x1:x2, 1], test_img[y1:y2, x1:x2, 2]])
-                prepare_images.show_roi([test_img_roi, imgs[j]])
-                self.assertTrue(np.allclose(imgs[j], test_img_roi), msg="In imgs[{}]".format(j))
+            # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
+            (x1, y1, x2, y2) = (coords[j].xmin, coords[j].ymin, coords[j].xmax, coords[j].ymax)
+            test_img_roi = np.array(
+                [test_img[y1:y2, x1:x2, 0], test_img[y1:y2, x1:x2, 1], test_img[y1:y2, x1:x2, 2]])
+            self.assertTrue(np.allclose(imgs[j], test_img_roi), msg="In imgs[{}]".format(j))

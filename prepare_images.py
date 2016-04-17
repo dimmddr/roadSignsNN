@@ -29,17 +29,30 @@ def compute_covering(window, label):
         return 0
 
 
-def split_into_subimgs(img, labels, sub_img_shape, lbl_array, debug, step=1):
-    shape = (lbl_array.shape[0], SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
+def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
+    shape = (int(np.floor((img.shape[HEIGHT] - sub_img_shape[HEIGHT]) / step) + 1),
+             int(np.floor((img.shape[WIDTH] - sub_img_shape[WIDTH]) / step) + 1),
+             SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
+    # shape = (lbl_array.shape[0], SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)
     result_array = as_strided(img, shape=shape,
-                              strides=(img.strides[2] * step, img.strides[0], img.strides[1], img.strides[2]))
+                              strides=(
+                                  img.strides[1] * step + (img.shape[WIDTH] - sub_img_shape[WIDTH]) % step *
+                                  img.strides[2],
+                                  img.strides[2] * step,
+                                  img.strides[0], img.strides[1], img.strides[2]))
+    result_array = result_array.reshape(
+        result_array.shape[0] * result_array.shape[1],
+        result_array.shape[2],
+        result_array.shape[3],
+        result_array.shape[4])
+    lbl_array = np.zeros(result_array.shape[0])
     index = 0
 
     coords = dict()
     for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
         for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
-            window = Rectangle(i, ii, i + sub_img_shape[HEIGHT], ii + sub_img_shape[WIDTH])
+            window = Rectangle(ii, i, ii + sub_img_shape[HEIGHT], i + sub_img_shape[WIDTH])
             cover = np.array([compute_covering(window=window,
                                                label=Rectangle(lbl[1], lbl[0], lbl[3], lbl[2])) for lbl in labels])
             is_cover = int(np.any(cover > COVER_PERCENT))
@@ -61,8 +74,7 @@ def split_into_subimgs(img, labels, sub_img_shape, lbl_array, debug, step=1):
             lbl_array[index] = is_cover
             coords[index] = window
             index += 1
-        index += int(sub_img_shape[WIDTH] / step)
-    return result_array, coords
+    return result_array, lbl_array, coords
 
 
 def prepare(img_path, labels, debug=False):
@@ -72,15 +84,11 @@ def prepare(img_path, labels, debug=False):
         print("Prepare image " + img_path)
         print(img.shape)
         print(labels)
-    res_img = cv2.normalize(img.astype('float'), None, 0.0, 1.0, cv2.NORM_MINMAX)
+    res_img = img / 255
     res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
 
-    lbl_res = np.zeros(shape=int(
-        (res_img.shape[WIDTH] - SUB_IMG_WIDTH + 1) / step * (res_img.shape[HEIGHT] - SUB_IMG_HEIGHT + 1) / step + (
-            SUB_IMG_WIDTH / step * res_img.shape[HEIGHT] / step)))
-    res, coords = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-                                     labels=labels,
-                                     lbl_array=lbl_res, step=step, debug=debug)
+    res, lbl_res, coords = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+                                              labels=labels, step=step, debug=debug)
 
     return res, lbl_res, coords
 
