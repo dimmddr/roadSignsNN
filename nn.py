@@ -306,7 +306,6 @@ class Clf(object):
                                               allow_input_downcast=True)
 
     def learning(self, dataset, labels, n_epochs=200, debug_print=False):
-        dataset
         np.random.seed(self.random_state)
         np.random.shuffle(dataset)
         np.random.seed(self.random_state)
