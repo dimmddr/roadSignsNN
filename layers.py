@@ -1,5 +1,6 @@
 import lasagne
 import numpy as np
+from theano.tensor.signal.downsample import max_pool_2d
 
 WIDTH_INDEX = 3
 HEIGHT_INDEX = 2
@@ -22,7 +23,5 @@ class SpatialPoolingLayer(lasagne.layers.Layer):
         for bin_size in self.bin_sizes:
             win_size = (np.ceil(input.shape[WIDTH_INDEX] / bin_size), np.ceil(input.shape[HEIGHT_INDEX] / bin_size))
             stride = (np.floor(input.shape[WIDTH_INDEX] / bin_size), np.floor(input.shape[HEIGHT_INDEX] / bin_size))
-            layers.append(lasagne.layers.flatten(
-                lasagne.layers.MaxPool2DLayer(input, pool_size=win_size, stride=stride)
-            ))
+            layers.append(max_pool_2d(input=input, ds=win_size, st=stride))
         return lasagne.layers.concat(layers)

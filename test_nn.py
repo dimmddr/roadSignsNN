@@ -195,13 +195,13 @@ def test_load_params(batch_size=45, random_state=123, init=False):
 
 
 def test_all():
-    # print("test batch size")
-    # res = test_batch_size(40, 50, 10, debug=True)
-    # print(res)
+    print("test batch size")
+    res = test_batch_size(40, 50, 10, debug=True)
+    print(res)
     # print("Test load parameters")
     # test_load_params()
-    print("Test Classification")
-    test_classification()
+    # print("Test Classification")
+    # test_classification()
 
 
 if __name__ == '__main__':
