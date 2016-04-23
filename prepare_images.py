@@ -40,39 +40,20 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
                                   img.strides[2],
                                   img.strides[2] * step,
                                   img.strides[0], img.strides[1], img.strides[2]))
-    result_array.shape = (
-        result_array.shape[0] * result_array.shape[1],
-        result_array.shape[2],
-        result_array.shape[3],
-        result_array.shape[4]
-    )
-    lbl_array = np.zeros(result_array.shape[0])
+
+    lbl_array = np.zeros(shape=(result_array.shape[0], result_array.shape[1]))
     index = 0
 
     coords = dict()
-    for i in range(0, img.shape[HEIGHT] - sub_img_shape[HEIGHT], step):
-        for ii in range(0, img.shape[WIDTH] - sub_img_shape[WIDTH], step):
+    for i in range(lbl_array.shape[0]):
+        for ii in range(lbl_array.shape[1]):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
-            window = Rectangle(ii, i, ii + sub_img_shape[HEIGHT], i + sub_img_shape[WIDTH])
+            window = Rectangle(ii * step, i * step, ii * step + sub_img_shape[HEIGHT], i * step + sub_img_shape[WIDTH])
             cover = np.array([compute_covering(window=window,
                                                label=Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) for lbl in labels])
             is_cover = int(np.any(cover > COVER_PERCENT))
-            # if debug and (1 == is_cover):
-            #     roi = img[:, i: i + sub_img_shape[HEIGHT], ii: ii + sub_img_shape[WIDTH]]
-            #     (r, g, b) = (roi[0], roi[1], roi[2])
-            #     roi = cv2.merge((r, g, b))
-            #     cv2.imshow("from labels", roi)
-            #     cv2.waitKey(0)
-            #     cv2.destroyAllWindows()
-            #
-            #     roi = result_array[index]
-            #     (r, g, b) = (roi[0], roi[1], roi[2])
-            #     roi = cv2.merge((r, g, b))
-            #     cv2.imshow("from strides", roi)
-            #     cv2.waitKey(0)
-            #     cv2.destroyAllWindows()
 
-            lbl_array[index] = is_cover
+            lbl_array[i, ii] = is_cover
             coords[index] = window
             index += 1
     return result_array, lbl_array, coords
@@ -124,6 +105,14 @@ def show_rectangles(filename, rectangles_list):
             cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
     cv2.imshow(filename, img)
     cv2.waitKey()
+
+
+def save_img_with_rectangles(filename, rectangles_list):
+    img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+    for rect in rectangles_list:
+        if rect is not None:
+            cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
+    cv2.imwrite(filename + "_with_rects.jpg", img)
 
 
 # Probably temp function before I fix localization

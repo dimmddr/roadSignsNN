@@ -135,10 +135,13 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                     print("Image prepared")
                 imgs = all_imgs[all_lbls == 1]
                 lbls = all_lbls[all_lbls == 1]
-                print(imgs.shape, lbls.shape)
+                # print(imgs.shape, lbls.shape)
                 neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
-                neg_lbls = all_lbls[:neg_size]
-                neg_imgs = all_imgs[:neg_size]
+                neg_indexes = np.random.choice(np.arange(all_imgs.shape[0] * all_imgs.shape[1]),
+                                               neg_size, replace=False)
+                neg_indexes = np.unravel_index(neg_indexes, (all_imgs.shape[0], all_imgs.shape[1]))
+                neg_lbls = all_lbls[neg_indexes]
+                neg_imgs = all_imgs[neg_indexes]
                 imgs = np.concatenate((imgs, neg_imgs))
                 lbls = np.concatenate((lbls, neg_lbls))
                 print(imgs.shape, lbls.shape)
@@ -154,7 +157,9 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
             lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
             for i in range(test_img.shape[0]):
                 imgs, lbls, coords = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
-                y_pred = net.predict(imgs)
+                y_pred = np.zeros_like(lbls)
+                for j in range(imgs.shape[0]):
+                    y_pred[j] = net.predict(imgs[j])
                 tmp = lbls - y_pred
 
                 tp = np.sum((y_pred == 1) & (lbls == 1))
@@ -165,10 +170,11 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
                       .format(f1_score, tp, tn, fp, fn))
                 res.append((batch_size, f1_score, tp, tn, fp, fn))
-                tmp = y_pred == 1
-                tmp = np.arange(lbls.shape[0])[tmp]
+                tmp = np.arange(lbls.shape[0] * lbls.shape[1]).reshape(lbls.shape)
+                tmp = tmp[y_pred == 1]
                 rects = [coords.get(key, None) for key in tmp]
-                prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
+                prepare_images.save_img_with_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
+                # prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
         return res
 
 
