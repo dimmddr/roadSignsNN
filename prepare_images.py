@@ -130,3 +130,8 @@ def get_roi_from_images(images, img_path):
             res_roi.append(np.array([roi[:, :, 0], roi[:, :, 1], roi[:, :, 2]]))
             res_label.append(label_dict[sign.label])
     return res_roi, res_label, label_dict
+
+
+def create_synthetic_data(imgs):
+    res = []
+    return imgs

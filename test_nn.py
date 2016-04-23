@@ -134,7 +134,8 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 if debug:
                     print("Image prepared")
                 imgs = all_imgs[all_lbls == 1]
-                lbls = all_lbls[all_lbls == 1]
+                imgs = prepare_images.create_synthetic_data(imgs)
+                lbls = np.ones(imgs.shape[0])
                 # print(imgs.shape, lbls.shape)
                 neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
                 neg_indexes = np.random.choice(np.arange(all_imgs.shape[0] * all_imgs.shape[1]),
