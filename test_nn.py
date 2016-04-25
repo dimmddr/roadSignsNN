@@ -8,10 +8,10 @@ import nn
 import prepare_images
 from image import Image
 
-dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
-annotation_path = dataset_path + 'frameAnnotations.csv'
-# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
-# annotation_path = dataset_path + 'allAnnotations.csv'
+# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
+# annotation_path = dataset_path + 'frameAnnotations.csv'
+dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
+annotation_path = dataset_path + 'allAnnotations.csv'
 
 # negatives_path = dataset_path + "negatives.dat"
 # train_set_complete = np.empty(0)
@@ -114,8 +114,9 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
         test_init()
         res = []
 
-        # ind = int(np.floor(len(train_set_complete) * 0.75))
-        ind = 10
+        ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
+        print("Total {} images for learning".format(ind))
+        # ind = 20
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
             alfa = 0.01
@@ -146,7 +147,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 imgs = np.concatenate((imgs, neg_imgs))
                 lbls = np.concatenate((lbls, neg_lbls))
                 print(imgs.shape, lbls.shape)
-                net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=200)
+                net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=1)
 
             net.save_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))
             net.load_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))

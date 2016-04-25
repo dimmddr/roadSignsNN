@@ -211,9 +211,10 @@ class Network(object):
             test_batches += 1
         if debug_print:
             print("Final results:")
-            print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-            print("  test accuracy:\t\t{:.2f} %".format(
-                test_acc / test_batches * 100))
+            if test_batches > 0:
+                print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+                print("  test accuracy:\t\t{:.2f} %".format(
+                    test_acc / test_batches * 100))
 
     def predict(self, dataset):
         dataset_first = convert48to24(dataset)

@@ -1,5 +1,7 @@
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Rectangle
 from numpy.lib.stride_tricks import as_strided
 
 from nn import Rectangle
@@ -103,8 +105,11 @@ def show_rectangles(filename, rectangles_list):
     for rect in rectangles_list:
         if rect is not None:
             cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
-    cv2.imshow(filename, img)
-    cv2.waitKey()
+    (b, g, r) = cv2.split(img)
+    img = cv2.merge((r, g, b))
+    plt.imshow(img)
+    # cv2.imshow(filename, img)
+    # cv2.waitKey()
 
 
 def save_img_with_rectangles(filename, rectangles_list):
@@ -133,5 +138,8 @@ def get_roi_from_images(images, img_path):
 
 
 def create_synthetic_data(imgs):
+    # Create array of size mods [1, 4], step = 0.5
+    sizes = np.arange(start=1, stop=4.5, step=0.5)
+    total = imgs.shape[0] * sizes.shape[0] * 2  # *2
     res = []
     return imgs
