@@ -19,6 +19,13 @@ WIDTH = 2
 HEIGHT = 1
 LAYERS = 0
 
+XMIN = 0
+YMIN = 1
+XMAX = 2
+YMAX = 3
+
+
+# TODO: переписать либо все с использованием Rectangle namedtuple, либо через numpy. Например с помощью recarray
 
 def compute_covering(window, label):
     dx = min(window.xmax, label.xmax) - max(window.xmin, label.xmin)
@@ -100,23 +107,26 @@ def show_roi(roi_list):
         cv2.destroyAllWindows()
 
 
-def show_rectangles(filename, rectangles_list):
+def show_rectangles(filename, rectangles_list, show_type='matplotlib'):
     img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     for rect in rectangles_list:
         if rect is not None:
-            cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
-    (b, g, r) = cv2.split(img)
-    img = cv2.merge((r, g, b))
-    plt.imshow(img)
-    # cv2.imshow(filename, img)
-    # cv2.waitKey()
+            cv2.rectangle(img, (rect[XMIN], rect[YMIN]), (rect[XMAX], rect[YMAX]), (0, 255, 0), 1)
+    if show_type == 'matplotlib':
+        (b, g, r) = cv2.split(img)
+        img = cv2.merge((r, g, b))
+        plt.imshow(img)
+        plt.show()
+    else:
+        cv2.imshow(filename, img)
+        cv2.waitKey()
 
 
 def save_img_with_rectangles(filename, rectangles_list):
     img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     for rect in rectangles_list:
         if rect is not None:
-            cv2.rectangle(img, (rect.xmin, rect.ymin), (rect.xmax, rect.ymax), (0, 255, 0), 1)
+            cv2.rectangle(img, (rect[XMIN], rect[YMIN]), (rect[XMAX], rect[YMAX]), (0, 255, 0), 1)
     cv2.imwrite(filename + "_with_rects.jpg", img)
 
 
@@ -143,3 +153,56 @@ def create_synthetic_data(imgs):
     total = imgs.shape[0] * sizes.shape[0] * 2  # *2
     res = []
     return imgs
+
+
+def nms(boxes, overlap_threshold):
+    if 0 == len(boxes):
+        return []
+
+    boxes = np.array(boxes)
+
+    # initialize the list of picked indexes
+    pick = []
+
+    # grab the coordinates of the bounding boxes
+    xmin = boxes[:, 0]
+    ymin = boxes[:, 1]
+    xmax = boxes[:, 2]
+    ymax = boxes[:, 3]
+
+    # compute the area of the bounding boxes and sort the bounding
+    # boxes by the bottom-right y-coordinate of the bounding box
+    area = (xmax - xmin + 1) * (ymax - ymin + 1)
+    idxs = np.argsort(ymax)
+
+    # keep looping while some indexes still remain in the indexes
+    # list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list and add the
+        # index value to the list of picked indexes
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+
+        # find the largest (x, y) coordinates for the start of
+        # the bounding box and the smallest (x, y) coordinates
+        # for the end of the bounding box
+        xx1 = np.maximum(xmin[i], xmin[idxs[:last]])
+        yy1 = np.maximum(ymin[i], ymin[idxs[:last]])
+        xx2 = np.minimum(xmax[i], xmax[idxs[:last]])
+        yy2 = np.minimum(ymax[i], ymax[idxs[:last]])
+
+        # compute the width and height of the bounding box
+        w = np.maximum(0, xx2 - xx1 + 1)
+        h = np.maximum(0, yy2 - yy1 + 1)
+
+        # compute the ratio of overlap
+        overlap = (w * h) / area[idxs[:last]]
+
+        # delete all indexes from the index list that have
+        idxs = np.delete(idxs, np.concatenate(([last],
+                                               np.where(overlap > overlap_threshold)[0])))
+
+    # return only the bounding boxes that were picked using the
+    # integer data type
+    return boxes[pick]

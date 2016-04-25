@@ -114,9 +114,9 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
         test_init()
         res = []
 
-        ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
-        print("Total {} images for learning".format(ind))
-        # ind = 20
+        # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
+        # print("Total {} images for learning".format(ind))
+        ind = 20
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
             alfa = 0.01
@@ -156,6 +156,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
 
             print("Testing...")
             test_img = np.array(list(train_set_without_negatives.keys())[ind:ind + 10])
+            # test_img = np.array(list(train_set_without_negatives.keys())[ind:ind + 10])
             lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
             for i in range(test_img.shape[0]):
                 imgs, lbls, coords = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
@@ -175,8 +176,11 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 tmp = np.arange(lbls.shape[0] * lbls.shape[1]).reshape(lbls.shape)
                 tmp = tmp[y_pred == 1]
                 rects = [coords.get(key, None) for key in tmp]
-                prepare_images.save_img_with_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
-                # prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
+                # prepare_images.save_img_with_rectangles(dataset_path + test_img[i].decode('utf8'), rects)
+                prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects, show_type='opencv')
+                rects = prepare_images.nms(rects, 0.3)
+                prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects, show_type='opencv')
+
         return res
 
 
