@@ -84,9 +84,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
 # TODO: Make one class for all neural net, include classifier
 class Network(object):
-    def __init__(self, batch_size=100, filter_numbers=(25, 25), filter_shape_first_convlayer=(SUB_IMG_LAYERS, 5, 5),
-                 filter_shape_second_convlayer=(SUB_IMG_LAYERS, 3, 3), pool_size=(2, 2), hidden_layer_size=500,
-                 learning_rate=0.01, random_state=42):
+    def __init__(self, batch_size=100, learning_rate=0.01, random_state=42):
         self.input = T.tensor4('inputs')
         self.target = T.ivector('targets')
         self.learning_rate = learning_rate
@@ -98,43 +96,8 @@ class Network(object):
             input_var=self.input
         )
 
-        # Сверточный слой, принимает регион исходного изображения размером 3х12х12
-        self.network = lasagne.layers.Conv2DLayer(
-            incoming=self.network,
-            num_filters=filter_numbers[0],
-            filter_size=(filter_shape_first_convlayer[1], filter_shape_first_convlayer[2]),
-            nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform()
-        )
-
-        # Poolling layer
-        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
-
-        # Второй сверточный слой
-        self.network = lasagne.layers.Conv2DLayer(
-            incoming=self.network,
-            num_filters=filter_numbers[1],
-            filter_size=(filter_shape_second_convlayer[1], filter_shape_second_convlayer[2]),
-            nonlinearity=lasagne.nonlinearities.rectify,
-            W=lasagne.init.GlorotUniform()
-        )
-
-        # Poolling layer
-        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
-
-        # Fully-connected layer with 50% dropout
-        self.network = lasagne.layers.DenseLayer(
-            lasagne.layers.dropout(self.network, p=.5),
-            num_units=hidden_layer_size,
-            nonlinearity=lasagne.nonlinearities.rectify
-        )
-
-        # Softmax layer with dropout. 2 unit output
-        self.network = lasagne.layers.DenseLayer(
-            lasagne.layers.dropout(self.network, p=.5),
-            num_units=2,
-            nonlinearity=lasagne.nonlinearities.softmax
-        )
+    # noinspection PyAttributeOutsideInit
+    def initialize(self):
         self.prediction = lasagne.layers.get_output(self.network)
         loss = lasagne.objectives.categorical_crossentropy(self.prediction, self.target)
         self.loss = loss.mean()
@@ -155,6 +118,35 @@ class Network(object):
         self.test_acc = T.mean(T.eq(T.argmax(self.test_prediction, axis=1), self.target), dtype=theano.config.floatX)
         self.val_fn = theano.function([self.input, self.target], [self.test_loss, self.test_acc],
                                       allow_input_downcast=True)
+
+    def add_convolution_layer(self, filter_numbers, filter_size):
+        self.network = lasagne.layers.Conv2DLayer(
+            incoming=self.network,
+            num_filters=filter_numbers,
+            filter_size=filter_size,
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform()
+        )
+
+    def add_pooling_layer(self, pool_size):
+        self.network = lasagne.layers.MaxPool2DLayer(self.network, pool_size=pool_size)
+
+    def add_dropout_layer(self, p):
+        self.network = lasagne.layers.dropout(self.network, p=p)
+
+    def add_fully_connected_layer(self, hidden_layer_size):
+        self.network = lasagne.layers.DenseLayer(
+            self.network,
+            num_units=hidden_layer_size,
+            nonlinearity=lasagne.nonlinearities.rectify
+        )
+
+    def add_softmax_layer(self, unit_numbers):
+        self.network = lasagne.layers.DenseLayer(
+            self.network,
+            num_units=unit_numbers,
+            nonlinearity=lasagne.nonlinearities.softmax
+        )
 
     def learning(self, dataset, labels, n_epochs=200, debug_print=False):
         dataset_first = convert48to24(dataset)

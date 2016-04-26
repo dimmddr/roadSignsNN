@@ -116,18 +116,27 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
 
         # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
         # print("Total {} images for learning".format(ind))
-        ind = 20
+        ind = 40
         for batch_size in range(min_size, max_size, step_size):
             print("Batch size = {}".format(batch_size))
+
             alfa = 0.01
-            filter_numbers = (100, 50)
-            net = nn.Network(learning_rate=alfa, filter_numbers=filter_numbers, batch_size=batch_size, random_state=123)
+            filter_numbers = 100
+            first_net = nn.Network(learning_rate=alfa, batch_size=batch_size, random_state=123)
+            first_net.add_convolution_layer(filter_numbers=filter_numbers, filter_size=(5, 5))
+            first_net.add_pooling_layer(pool_size=(2, 2))
+            first_net.add_dropout_layer(p=.5)
+            first_net.add_fully_connected_layer(hidden_layer_size=500)
+            first_net.add_dropout_layer(p=.5)
+            first_net.add_softmax_layer(unit_numbers=2)
+            first_net.initialize()
+
             train_set = np.array(list(train_set_without_negatives.keys()))
             train_set.sort()
             train_set = train_set[:ind]
             lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
-            for i in range(0, ind):
+            for i in range(0, ind / 2):
                 if debug:
                     print(i)
                 all_imgs, all_lbls, coords = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
@@ -147,10 +156,10 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 imgs = np.concatenate((imgs, neg_imgs))
                 lbls = np.concatenate((lbls, neg_lbls))
                 print(imgs.shape, lbls.shape)
-                net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=1)
+                first_net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=1)
 
-            net.save_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))
-            net.load_params("test_batch_size_{}_filter_numbers_{}".format(batch_size, filter_numbers))
+            first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn"
+                                  .format(batch_size, filter_numbers, ind / 2))
 
             # show_some_weights(net)
 
@@ -162,7 +171,7 @@ def test_batch_size(min_size=5, max_size=200, step_size=5, init=False, debug=Fal
                 imgs, lbls, coords = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
                 y_pred = np.zeros_like(lbls)
                 for j in range(imgs.shape[0]):
-                    y_pred[j] = net.predict(imgs[j])
+                    y_pred[j] = first_net.predict(imgs[j])
                 tmp = lbls - y_pred
 
                 tp = np.sum((y_pred == 1) & (lbls == 1))
