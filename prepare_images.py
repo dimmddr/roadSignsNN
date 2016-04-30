@@ -205,4 +205,4 @@ def nms(boxes, overlap_threshold):
 
     # return only the bounding boxes that were picked using the
     # integer data type
-    return boxes[pick]
+    return boxes[pick], pick
