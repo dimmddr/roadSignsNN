@@ -12,6 +12,7 @@ WIDTH_INDEX = 2
 HEIGHT_INDEX = 1
 LAYER_INDEX = 0
 
+DEFAULT_BATCH_SIZE = 50
 
 def prepare_dataset(dataset, lbls=None):
     """ Prepare the dataset
@@ -84,7 +85,10 @@ class Network(object):
         self.target = T.ivector('targets')
         self.learning_rate = learning_rate
         self.random_state = random_state
-        self.batch_size = input_shape[0]
+        if input_shape[0] is not None:
+            self.batch_size = input_shape[0]
+        else:
+            self.batch_size = DEFAULT_BATCH_SIZE
         # Input layer
         self.network = lasagne.layers.InputLayer(
             shape=input_shape,
@@ -203,12 +207,10 @@ class Network(object):
                     test_acc / test_batches * 100))
 
     def predict(self, dataset):
-        dataset_first = convert48to24(dataset)
         size = self.batch_size
         res = np.zeros(dataset.shape[0])
         for i in range(dataset.shape[0] // size):
-            # datasets = prepare_dataset()
-            res[i * size: i * size + size] = self.predict_values(dataset_first[i * size: i * size + size, :, :, :])
+            res[i * size: i * size + size] = self.predict_values(dataset[i * size: i * size + size, :, :, :])
         return res
 
     def save_params(self, filename):

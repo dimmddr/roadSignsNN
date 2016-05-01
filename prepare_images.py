@@ -122,6 +122,7 @@ def show_rectangles(filename, rectangles_list, show_type='matplotlib'):
         cv2.waitKey()
 
 
+# TODO добавить схранение в отдельный каталог
 def save_img_with_rectangles(filename, rectangles_list):
     img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
     for rect in rectangles_list:
