@@ -4,6 +4,7 @@ from collections import namedtuple
 import lasagne
 import numpy as np
 import theano
+from lasagne.regularization import regularize_network_params
 from theano import tensor as T
 
 Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
@@ -112,7 +113,9 @@ class Network(object):
 
         self.test_prediction = lasagne.layers.get_output(self.network, deterministic=True)
         self.test_loss = lasagne.objectives.categorical_crossentropy(self.test_prediction, self.target)
-        self.test_loss = self.test_loss.mean()
+        l1 = regularize_network_params(self.network, lasagne.regularization.l1)
+        l2 = regularize_network_params(self.network, lasagne.regularization.l2)
+        self.test_loss = self.test_loss.mean() + (l1 * 1e-4) + l2
 
         self.test_acc = T.mean(T.eq(T.argmax(self.test_prediction, axis=1), self.target), dtype=theano.config.floatX)
         self.val_fn = theano.function([self.input, self.target], [self.test_loss, self.test_acc],

@@ -123,12 +123,12 @@ def show_rectangles(filename, rectangles_list, show_type='matplotlib'):
 
 
 # TODO добавить схранение в отдельный каталог
-def save_img_with_rectangles(filename, rectangles_list):
-    img = cv2.imread(filename, cv2.IMREAD_UNCHANGED)
+def save_img_with_rectangles(dataset_path, filename, rectangles_list):
+    img = cv2.imread(dataset_path + filename, cv2.IMREAD_UNCHANGED)
     for rect in rectangles_list:
         if rect is not None:
             cv2.rectangle(img, (rect[XMIN], rect[YMIN]), (rect[XMAX], rect[YMAX]), (0, 255, 0), 1)
-    cv2.imwrite(filename + "_with_rects.jpg", img)
+    cv2.imwrite(dataset_path + "results/" + filename + "_with_rects.jpg", img)
 
 
 # Probably temp function before I fix localization
