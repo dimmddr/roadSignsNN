@@ -15,48 +15,6 @@ LAYER_INDEX = 0
 
 DEFAULT_BATCH_SIZE = 50
 
-def prepare_dataset(dataset, lbls=None):
-    """ Prepare the dataset
-    :param dataset: np 4D array with shape (images_number, image_height, image_width, image_layers)
-    :param lbls: labels for images in [0, 1]
-    :return tuple of theano.shared if lbls is not None, otherwise return single theano.shared
-    """
-
-    # noinspection PyIncorrectDocstring
-    def shared_dataset(data_x, data_y=None, borrow=True):
-        """ Function that loads the dataset into shared variables
-
-        The reason we store our dataset in shared variables is to allow
-        Theano to copy it into the GPU memory (when code is run on GPU).
-        Since copying data into the GPU is slow, copying a minibatch everytime
-        is needed (the default behaviour if the data is not in a shared
-        variable) would lead to a large decrease in performance.
-        """
-        shared_x = theano.shared(np.asarray(data_x,
-                                            dtype=theano.config.floatX),
-                                 borrow=borrow)
-        if data_y is not None:
-            shared_y = theano.shared(np.asarray(data_y,
-                                                dtype=theano.config.floatX),
-                                     borrow=borrow)
-            # When storing data on the GPU it has to be stored as floats
-            # therefore we will store the labels as ``floatX`` as well
-            # (``shared_y`` does exactly that). But during our computations
-            # we need them as ints (we use labels as index, and if they are
-            # floats it doesn't make sense) therefore instead of returning
-            # ``shared_y`` we will have to cast it to int. This little hack
-            # lets ous get around this issue
-            return shared_x, T.cast(shared_y, 'int32')
-        return shared_x, None
-
-    train_set_x, train_set_y = shared_dataset(dataset, lbls)
-
-    if train_set_y is not None:
-        rval = (train_set_x, train_set_y)
-    else:
-        rval = train_set_x
-    return rval
-
 
 def convert48to12(dataset):
     return dataset[:, :, 1::4, 1::4]

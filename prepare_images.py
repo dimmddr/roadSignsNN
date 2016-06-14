@@ -84,6 +84,30 @@ def prepare(img_path, labels, debug=False):
     return res, lbl_res, coords
 
 
+def prepare_calibration(img_path, labels, debug=False):
+    # Возвращает метки в виде (yn, xn, wn, hn), для калибровки рамки изображения
+    # если (x, y) координаты верхенго левого угла и (w, h) соответственно ширина и высота,
+    # то новая рамка будет (x - xn * w / wn, y - yn * h / hn), (w / wn, h / hn)
+    # TODO: проанализировать данные и подобрать оптимальные yn, xn, wn, hn
+    step = 2
+    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+    if debug:
+        print("Prepare image " + img_path)
+        print(img.shape)
+        print(labels)
+    res_img = img / 255
+    res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
+
+    res, lbl_res, coords = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+                                              labels=labels, step=step, debug=debug)
+    res = res[lbl_res == 1]
+    tmp = np.arange(lbl_res.shape[0] * lbl_res.shape[1]).reshape(lbl_res.shape)
+    tmp = tmp[lbl_res == 1]
+    # rects = [coords.get(key, None) for key in tmp]
+
+    return res, lbl_res, coords
+
+
 def show_sign(img_path, lbl):
     print(img_path)
     print(lbl)
