@@ -39,4 +39,5 @@ def analyse_sign_frame_size_fluctuations(annotation_path, output_file):
         plt.xticks(bins, bins)
         plt.show()
 
-        # Annotation tag;Upper left corner X;Upper left corner Y;Lower right corner X;Lower right corner Y;Occluded,On another road
+        # Annotation tag;
+        # Upper left corner X;Upper left corner Y;Lower right corner X;Lower right corner Y;Occluded,On another road
