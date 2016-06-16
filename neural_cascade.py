@@ -1,3 +1,9 @@
+import numpy as np
+
+import prepare_images
+from nn import Network, convert48to12, convert48to24
+from test_nn import dataset_path
+
 SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
@@ -23,10 +29,10 @@ third_filter_size = (7, 7)
 
 
 def nn_init():
-    first_net = nn.Network(learning_rate=alfa,
-                           input_shape=(first_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4),
-                           random_state=123
-                           )
+    first_net = Network(learning_rate=alfa,
+                        input_shape=(first_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4),
+                        random_state=123
+                        )
 
     first_net.add_convolution_layer(filter_numbers=first_filter_numbers, filter_size=first_filter_size)
     first_net.add_pooling_layer(pool_size=(2, 2))
@@ -36,11 +42,11 @@ def nn_init():
     first_net.add_softmax_layer(unit_numbers=2)
     first_net.initialize()
 
-    second_net = nn.Network(learning_rate=alfa,
-                            input_shape=(
-                                second_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2),
-                            random_state=123
-                            )
+    second_net = Network(learning_rate=alfa,
+                         input_shape=(
+                             second_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2),
+                         random_state=123
+                         )
     second_net.add_convolution_layer(filter_numbers=second_filter_numbers, filter_size=second_filter_size)
     second_net.add_pooling_layer(pool_size=(2, 2))
     second_net.add_dropout_layer(p=.5)
@@ -49,11 +55,11 @@ def nn_init():
     second_net.add_softmax_layer(unit_numbers=2)
     second_net.initialize()
 
-    third_net = nn.Network(learning_rate=alfa,
-                           input_shape=(
-                               third_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-                           random_state=123
-                           )
+    third_net = Network(learning_rate=alfa,
+                        input_shape=(
+                            third_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+                        random_state=123
+                        )
     third_net.add_convolution_layer(filter_numbers=third_filter_numbers, filter_size=third_filter_size)
     third_net.add_pooling_layer(pool_size=(2, 2))
     third_net.add_dropout_layer(p=.5)
@@ -89,7 +95,7 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
             if debug:
                 print("imgs.shape, lbls.shape")
                 print(imgs.shape, lbls.shape)
-            neural_nets[net_12].learning(dataset=nn.convert48to12(imgs), labels=lbls, debug_print=debug, n_epochs=5)
+            neural_nets[net_12].learning(dataset=convert48to12(imgs), labels=lbls, debug_print=debug, n_epochs=5)
 
     if nn_for_learn[net_12_calibration]:
         if debug:
@@ -97,7 +103,7 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
         for i in range(indexes[net_12_calibration]):
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
                                                         lbl_train[i], debug=debug)
-            nn_for_learn[net_12_calibration].learning(dataset=nn.convert48to24(imgs), labels=lbls, debug_print=debug,
+            nn_for_learn[net_12_calibration].learning(dataset=convert48to24(imgs), labels=lbls, debug_print=debug,
                                                       n_epochs=10)
 
     if nn_for_learn[2]:
@@ -112,7 +118,7 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
                 print("Image prepared")
             lbls = np.zeros_like(all_lbls)
             for j in range(all_imgs.shape[0]):
-                lbls[j] = first_net.predict(nn.convert48to12(all_imgs[j]))
+                lbls[j] = first_net.predict(convert48to12(all_imgs[j]))
             imgs = all_imgs[(lbls == 1) & (all_lbls == 1)]
             neg_size = int(imgs.shape[0] * NEGATIVE_MULTIPLIER)
             neg_imgs = all_imgs[(lbls == 1) & (all_lbls == 0)]
@@ -127,6 +133,6 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
             if debug:
                 print("imgs.shape, lbls.shape")
                 print(imgs.shape, lbls.shape)
-            lbls = second_net.predict(dataset=nn.convert48to24(imgs), labels=lbls, debug_print=debug, n_epochs=10)
+            lbls = second_net.predict(dataset=convert48to24(imgs), labels=lbls, debug_print=debug, n_epochs=10)
             imgs = imgs[lbls == 1]
             third_net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=10)
