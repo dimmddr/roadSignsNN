@@ -105,34 +105,3 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
                                                         lbl_train[i], debug=debug)
             nn_for_learn[net_12_calibration].learning(dataset=convert48to24(imgs), labels=lbls, debug_print=debug,
                                                       n_epochs=10)
-
-    if nn_for_learn[2]:
-        if debug:
-            print("Third network learning")
-        for i in range(second_ind, third_ind):
-            if debug:
-                print(i)
-            all_imgs, all_lbls, coords = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                                lbl_train[i], debug=debug)
-            if debug:
-                print("Image prepared")
-            lbls = np.zeros_like(all_lbls)
-            for j in range(all_imgs.shape[0]):
-                lbls[j] = first_net.predict(convert48to12(all_imgs[j]))
-            imgs = all_imgs[(lbls == 1) & (all_lbls == 1)]
-            neg_size = int(imgs.shape[0] * NEGATIVE_MULTIPLIER)
-            neg_imgs = all_imgs[(lbls == 1) & (all_lbls == 0)]
-            lbls = np.ones(imgs.shape[0])
-            if neg_imgs.shape[0] is not None and neg_imgs.shape[0] > 0:
-                neg_indexes = np.random.choice(np.arange(neg_imgs.shape[0]), neg_size, replace=False)
-                neg_imgs = neg_imgs[neg_indexes]
-
-                neg_lbls = np.zeros(neg_imgs.shape[0])
-                imgs = np.concatenate((imgs, neg_imgs))
-                lbls = np.concatenate((lbls, neg_lbls))
-            if debug:
-                print("imgs.shape, lbls.shape")
-                print(imgs.shape, lbls.shape)
-            lbls = second_net.predict(dataset=convert48to24(imgs), labels=lbls, debug_print=debug, n_epochs=10)
-            imgs = imgs[lbls == 1]
-            third_net.learning(dataset=imgs, labels=lbls, debug_print=debug, n_epochs=10)
