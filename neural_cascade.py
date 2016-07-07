@@ -19,7 +19,7 @@ second_ind = 250
 first_batch_size = 50
 second_batch_size = 30
 third_batch_size = 30
-alfa = 0.01
+# alfa = 0.01
 first_filter_numbers = 100
 second_filter_numbers = 200
 third_filter_numbers = 200
@@ -27,10 +27,14 @@ first_filter_size = (5, 5)
 second_filter_size = (7, 7)
 third_filter_size = (7, 7)
 
+NET_12, NET_12_CALIBRATION, NET_24, NET_24_CALIBRATION, NET_48 = list(range(5))
 
-def nn_init():
-    first_net = Network(learning_rate=alfa,
-                        input_shape=(first_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4),
+
+def nn_init(sizes, batch_sizes, learning_rate=0.01):
+    # size = (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4)
+    layers, height, width = sizes[NET_12]
+    first_net = Network(learning_rate=learning_rate,
+                        input_shape=(batch_sizes[NET_12], layers, height, width),
                         random_state=123
                         )
 
@@ -42,9 +46,10 @@ def nn_init():
     first_net.add_softmax_layer(unit_numbers=2)
     first_net.initialize()
 
-    second_net = Network(learning_rate=alfa,
-                         input_shape=(
-                             second_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2),
+    # SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2
+    layers, height, width = sizes[NET_24]
+    second_net = Network(learning_rate=learning_rate,
+                         input_shape=(batch_sizes[NET_24], layers, height, width),
                          random_state=123
                          )
     second_net.add_convolution_layer(filter_numbers=second_filter_numbers, filter_size=second_filter_size)
@@ -55,9 +60,10 @@ def nn_init():
     second_net.add_softmax_layer(unit_numbers=2)
     second_net.initialize()
 
-    third_net = Network(learning_rate=alfa,
-                        input_shape=(
-                            third_batch_size, SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+    # SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH
+    layers, height, width = sizes[NET_48]
+    third_net = Network(learning_rate=learning_rate,
+                        input_shape=(batch_sizes[NET_48], layers, height, width),
                         random_state=123
                         )
     third_net.add_convolution_layer(filter_numbers=third_filter_numbers, filter_size=third_filter_size)
@@ -71,11 +77,10 @@ def nn_init():
 
 
 def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=False):
-    net_12, net_12_calibration, net_24, net_24_calibration, net_48 = (0, 1, 2, 3, 4)
-    if nn_for_learn[net_12]:
+    if nn_for_learn[NET_12]:
         if debug:
             print("First network learning")
-        for i in range(0, indexes[net_12]):
+        for i in range(0, indexes[NET_12]):
             if debug:
                 print(i)
             all_imgs, all_lbls, coords = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
@@ -95,13 +100,13 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
             if debug:
                 print("imgs.shape, lbls.shape")
                 print(imgs.shape, lbls.shape)
-            neural_nets[net_12].learning(dataset=convert48to12(imgs), labels=lbls, debug_print=debug, n_epochs=5)
+            neural_nets[NET_12].learning(dataset=convert48to12(imgs), labels=lbls, debug_print=debug, n_epochs=5)
 
-    if nn_for_learn[net_12_calibration]:
+    if nn_for_learn[NET_12_CALIBRATION]:
         if debug:
             print("Second network learning")
-        for i in range(indexes[net_12_calibration]):
+        for i in range(indexes[NET_12_CALIBRATION]):
             all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
                                                         lbl_train[i], debug=debug)
-            nn_for_learn[net_12_calibration].learning(dataset=convert48to24(imgs), labels=lbls, debug_print=debug,
+            nn_for_learn[NET_12_CALIBRATION].learning(dataset=convert48to24(imgs), labels=lbls, debug_print=debug,
                                                       n_epochs=10)
