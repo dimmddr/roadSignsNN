@@ -37,7 +37,6 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
-# TODO: Make one class for all neural net, include classifier
 class Network(object):
     def __init__(self, input_shape, learning_rate=0.01, random_state=42):
         self.input = T.tensor4('inputs')

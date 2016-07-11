@@ -83,30 +83,45 @@ def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=Fal
         for i in range(0, indexes[NET_12]):
             if debug:
                 print(i)
-            all_imgs, all_lbls, coords = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                                lbl_train[i], debug=debug)
+            all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                            lbl_train[i], debug=debug)
             if debug:
                 print("Image prepared")
-            imgs = all_imgs[all_lbls == 1]
-            lbls = np.ones(imgs.shape[0])
-            neg_size = int(lbls.shape[0] * NEGATIVE_MULTIPLIER)
-            neg_indexes = np.random.choice(np.arange(all_imgs.shape[0] * all_imgs.shape[1]),
+            images = all_images[all_labels == 1]
+            labels = np.ones(images.shape[0])
+            neg_size = int(labels.shape[0] * NEGATIVE_MULTIPLIER)
+            neg_indexes = np.random.choice(np.arange(all_images.shape[0] * all_images.shape[1]),
                                            neg_size, replace=False)
-            neg_indexes = np.unravel_index(neg_indexes, (all_imgs.shape[0], all_imgs.shape[1]))
-            neg_lbls = all_lbls[neg_indexes]
-            neg_imgs = all_imgs[neg_indexes]
-            imgs = np.concatenate((imgs, neg_imgs))
-            lbls = np.concatenate((lbls, neg_lbls))
+            neg_indexes = np.unravel_index(neg_indexes, (all_images.shape[0], all_images.shape[1]))
+            neg_labels = all_labels[neg_indexes]
+            neg_images = all_images[neg_indexes]
+            images = np.concatenate((images, neg_images))
+            labels = np.concatenate((labels, neg_labels))
             if debug:
-                print("imgs.shape, lbls.shape")
-                print(imgs.shape, lbls.shape)
-            neural_nets[NET_12].learning(dataset=convert48to12(imgs), labels=lbls, debug_print=debug, n_epochs=5)
+                print("images.shape, labels.shape")
+                print(images.shape, labels.shape)
+            neural_nets[NET_12].learning(dataset=convert48to12(images), labels=labels, debug_print=debug, n_epochs=5)
 
-    if nn_for_learn[NET_12_CALIBRATION]:
+    if nn_for_learn[NET_24]:
         if debug:
             print("Second network learning")
-        for i in range(indexes[NET_12_CALIBRATION]):
-            all_imgs, all_lbls = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                        lbl_train[i], debug=debug)
-            nn_for_learn[NET_12_CALIBRATION].learning(dataset=convert48to24(imgs), labels=lbls, debug_print=debug,
-                                                      n_epochs=10)
+        for i in range(indexes[NET_24]):
+            all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                            lbl_train[i], debug=debug)
+            predicted_labels = neural_nets[NET_12].predict(all_images)
+            images = all_images[predicted_labels == 1]
+            labels = all_labels[predicted_labels == 1]
+            nn_for_learn[NET_24].learning(dataset=convert48to24(images), labels=labels, debug_print=debug, n_epochs=10)
+
+    if nn_for_learn[NET_48]:
+        if debug:
+            print("Second network learning")
+        for i in range(indexes[NET_48]):
+            all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                            lbl_train[i], debug=debug)
+            predicted_labels = neural_nets[NET_12].predict(all_images)
+            images = all_images[predicted_labels == 1]
+            predicted_labels = neural_nets[NET_24].predict(images)
+            images = all_images[predicted_labels == 1]
+            labels = all_labels[predicted_labels == 1]
+            nn_for_learn[NET_48].learning(dataset=convert48to24(images), labels=labels, debug_print=debug, n_epochs=10)

@@ -96,8 +96,6 @@ def write_results(result: list, test_name):
         os.chdir(wd)
 
 
-
-
 # Can test only first n nets, cannot test something from the middle without first ones
 def testing_results(neural_nets, nn_params, nn_for_test, numbers_of_test_imgs=10):
     first_net, second_net = neural_nets
@@ -293,4 +291,3 @@ def test_neural_net_learning_size(start_size, end_size, step, init=False, debug=
                 outp_csv = tmp
 
         np.savetxt('test_learning_size.csv', outp_csv)
-
