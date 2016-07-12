@@ -1,12 +1,11 @@
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Rectangle
 from numpy.lib.stride_tricks import as_strided
 
-from nn import Rectangle
-
 # Max possible size of image
+import nn
+
 IMG_WIDTH = 1025
 IMG_HEIGHT = 523
 IMG_LAYERS = 3
@@ -57,9 +56,10 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
     for i in range(lbl_array.shape[0]):
         for ii in range(lbl_array.shape[1]):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
-            window = Rectangle(ii * step, i * step, ii * step + sub_img_shape[HEIGHT], i * step + sub_img_shape[WIDTH])
+            window = nn.Rectangle(ii * step, i * step, ii * step + sub_img_shape[HEIGHT],
+                                  i * step + sub_img_shape[WIDTH])
             cover = np.array([compute_covering(window=window,
-                                               label=Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) for lbl in labels])
+                                               label=nn.Rectangle(lbl[0], lbl[1], lbl[2], lbl[3])) for lbl in labels])
             is_cover = int(np.any(cover > COVER_PERCENT))
 
             lbl_array[i, ii] = is_cover

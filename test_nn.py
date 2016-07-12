@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 
+import neural_cascade
 import nn
 import prepare_images
 from image import Image
@@ -13,7 +14,6 @@ from image import Image
 # annotation_path = dataset_path + 'allAnnotations.csv'
 # dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
 # annotation_path = dataset_path + 'frameAnnotations.csv'
-from neural_cascade import nn_init, learning
 
 dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
 annotation_learning_path = dataset_path + 'learningAnnotations.csv'
@@ -187,7 +187,7 @@ def test_neural_net(init=False, debug=False):
     # I don't want to do it multiply times, it is time costly to read large file
     if not init:
         test_init()
-        first_net, second_net = nn_init()
+        first_net, second_net = neural_cascade.nn_init(sizes=, batch_sizes=, learning_rate=0.01)
 
         # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
         # print("Total {} images for learning".format(ind))
@@ -197,10 +197,10 @@ def test_neural_net(init=False, debug=False):
         train_set = train_set[:(first_ind + second_ind)]
         lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
-        learning(train_set=train_set, lbl_train=lbl_train,
-                 neural_nets=(first_net, second_net),
-                 nn_for_learn=[True, True],
-                 debug=debug)
+        neural_cascade.learning(train_set=train_set, lbl_train=lbl_train,
+                                neural_nets=(first_net, second_net),
+                                nn_for_learn=[True, True],
+                                debug=debug)
 
         first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
                               .format(first_batch_size, first_filter_numbers, first_ind, first_filter_size))
