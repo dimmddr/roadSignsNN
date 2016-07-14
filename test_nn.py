@@ -98,7 +98,7 @@ def write_results(result: list, test_name):
 
 # Can test only first n nets, cannot test something from the middle without first ones
 def testing_results(neural_nets, nn_params, nn_for_test, numbers_of_test_imgs=10):
-    first_net, second_net = neural_nets
+    first_net, second_net = neural_nets[:2]
     first_net.load_params(nn_params[0])
 
     if nn_for_test[1]:
@@ -183,34 +183,37 @@ def test_classification(seed=16, init=False):
               .format(f1_score, tp, tn, fp, fn))
 
 
-def test_neural_net(init=False, debug=False):
+def test_neural_net(indexes, batch_sizes, filters, sizes, init=False, debug=False):
     # I don't want to do it multiply times, it is time costly to read large file
     if not init:
         test_init()
-        first_net, second_net = neural_cascade.nn_init(sizes=, batch_sizes=, learning_rate=0.01)
+        first_net, second_net = neural_cascade.nn_init(sizes=sizes, batch_sizes=batch_sizes, learning_rate=0.01)
 
         # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
         # print("Total {} images for learning".format(ind))
 
         train_set = np.array(list(train_set_without_negatives.keys()))
         train_set.sort()
-        train_set = train_set[:(first_ind + second_ind)]
+        # TODO: remove magic numbers
+        train_set = train_set[:(indexes[0] + indexes[1])]
         lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
-        neural_cascade.learning(train_set=train_set, lbl_train=lbl_train,
+        neural_cascade.learning(train_set=train_set,
+                                lbl_train=lbl_train,
                                 neural_nets=(first_net, second_net),
                                 nn_for_learn=[True, True],
+                                indexes=indexes,
                                 debug=debug)
 
         first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-                              .format(first_batch_size, first_filter_numbers, first_ind, first_filter_size))
+                              .format(batch_sizes[0], filters[0][0], indexes[0], filters[0][1]))
 
         second_net.save_params("second_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-                               .format(second_batch_size, second_filter_numbers, second_ind, second_filter_size))
+                               .format(batch_sizes[1], filters[1][0], indexes[1], filters[1][1]))
 
         nn_params = ("first_lvl_test_batch_size_50_filter_numbers_100_on_75_image_learn_with_(5, 5)_filters_size",
                      "second_lvl_test_batch_size_30_filter_numbers_200_on_150_image_learn")
-        testing_results((first_net, second_net), nn_params)
+        testing_results((first_net, second_net), nn_params, (first_net, second_net))
 
 
 def test_load_params(batch_size=45, random_state=123, init=False):
@@ -247,7 +250,7 @@ def test_neural_net_learning_size(start_size, end_size, step, init=False, debug=
         outp_csv.fill(np.nan)
         for index in range(start_size, end_size, step):
             gc.collect()
-            first_net, second_net = nn_init()
+            first_net, second_net = neural_cascade.nn_init()
             print("Learning size = {}".format(index))
             first_ind = index
             train_set = np.array(list(train_set_without_negatives.keys()))
@@ -256,11 +259,11 @@ def test_neural_net_learning_size(start_size, end_size, step, init=False, debug=
             lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
             nn_for_learn = [True, False]
-            learning(train_set=train_set, lbl_train=lbl_train,
-                     neural_nets=(first_net, second_net),
-                     nn_for_learn=nn_for_learn,
-                     indexes=(first_ind, second_ind),
-                     debug=debug)
+            neural_cascade.learning(train_set=train_set, lbl_train=lbl_train,
+                                    neural_nets=(first_net, second_net),
+                                    nn_for_learn=nn_for_learn,
+                                    indexes=(first_ind, second_ind),
+                                    debug=debug)
 
             nn_params = ('first_lvl_test_learning_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size'
                          .format(first_ind, first_filter_numbers, first_ind, first_filter_size),
