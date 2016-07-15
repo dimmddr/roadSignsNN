@@ -1,6 +1,5 @@
 import csv
 import datetime as dt
-import gc
 import os
 
 import numpy as np
@@ -220,7 +219,6 @@ def test_load_params(batch_size=45, random_state=123, init=False):
     if not init:
         test_init()
     net = nn.Network(batch_size=batch_size, random_state=random_state)
-    net.load_params()
     test_img = np.array(list(train_set_without_negatives.keys()))
     test_img.sort()
     lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
@@ -236,61 +234,3 @@ def test_load_params(batch_size=45, random_state=123, init=False):
         f1_score = 2 * tp / (2 * tp + fn + fp)
         print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
               .format(f1_score, tp, tn, fp, fn))
-
-
-# TODO расширить тест для сетей кроме первой или переименовать
-def test_neural_net_learning_size(start_size, end_size, step, init=False, debug=False):
-    # I don't want to do it multiply times, it is time costly to read large file
-    if not init:
-        test_init()
-
-    with open("test_learning_size_result.txt", "w") as test_outp:
-        # TODO: избавиться от магического числа
-        outp_csv = np.empty(shape=(7,))
-        outp_csv.fill(np.nan)
-        for index in range(start_size, end_size, step):
-            gc.collect()
-            first_net, second_net = neural_cascade.nn_init()
-            print("Learning size = {}".format(index))
-            first_ind = index
-            train_set = np.array(list(train_set_without_negatives.keys()))
-            train_set.sort()
-            train_set = train_set[:(first_ind + second_ind)]
-            lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
-
-            nn_for_learn = [True, False]
-            neural_cascade.learning(train_set=train_set, lbl_train=lbl_train,
-                                    neural_nets=(first_net, second_net),
-                                    nn_for_learn=nn_for_learn,
-                                    indexes=(first_ind, second_ind),
-                                    debug=debug)
-
-            nn_params = ('first_lvl_test_learning_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size'
-                         .format(first_ind, first_filter_numbers, first_ind, first_filter_size),
-                         'second_lvl_test_learning_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size'
-                         .format(second_ind, second_filter_numbers, second_ind, second_filter_size)
-                         )
-
-            if nn_for_learn[0]:
-                first_net.save_params(nn_params[0])
-
-            if nn_for_learn[1]:
-                second_net.save_params(nn_params[1])
-
-            res = testing_results((first_net, second_net), nn_params, nn_for_test=[True, False])
-            tp_all, tn_all, fp_all, fn_all, f1_score_all, tn_percent_all = res
-
-            test_outp.write("Learning size = {}\n".format(index))
-            test_outp.write(
-                "f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}\n"
-                    .format(f1_score_all.mean(), tp_all.mean(), tn_all.mean(), fp_all.mean(), fn_all.mean()))
-            test_outp.write("True negative percent from all negatives = {}\n".format(tn_percent_all.mean()))
-            index_outp = np.zeros_like(tp_all)
-            index_outp.fill(index)
-            tmp = np.column_stack((index_outp, tp_all, tn_all, fp_all, fn_all, f1_score_all, tn_percent_all))
-            if outp_csv[0] is not np.nan:
-                outp_csv = np.vstack((outp_csv, tmp))
-            else:
-                outp_csv = tmp
-
-        np.savetxt('test_learning_size.csv', outp_csv)
