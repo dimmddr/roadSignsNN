@@ -2,7 +2,6 @@ import numpy as np
 
 import prepare_images
 from nn import Network, convert48to12, convert48to24
-from test_nn import dataset_path
 
 SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
@@ -76,7 +75,7 @@ def nn_init(sizes, batch_sizes, learning_rate=0.01):
     return [first_net, second_net, third_net]
 
 
-def learning(train_set, lbl_train, neural_nets, nn_for_learn, indexes, debug=False):
+def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, indexes, debug=False):
     if nn_for_learn[NET_12]:
         if debug:
             print("First network learning")

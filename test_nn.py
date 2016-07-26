@@ -183,6 +183,7 @@ def test_classification(seed=16, init=False):
 
 
 def test_neural_net(indexes, batch_sizes, filters, sizes, init=False, debug=False):
+    # TODO: make filter meaning again
     # I don't want to do it multiply times, it is time costly to read large file
     if not init:
         test_init()

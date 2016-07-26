@@ -1,5 +1,5 @@
 import data_utils
-from test_nn import annotation_learning_path
+from test_nn import *
 
 
 def data_analysis():
@@ -16,8 +16,16 @@ def test_all():
     # test_load_params()
     # print("Test Classification")
     # test_classification()
-    data_analysis()
+    # data_analysis()
 
+    # temp
+    SUB_IMG_WIDTH = 48
+    SUB_IMG_HEIGHT = 48
+    SUB_IMG_LAYERS = 3
+    test_neural_net(indexes=[5, 15], batch_sizes=(5, 15), filters=[[5, 15], [25, 30]],
+                    sizes=((SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4),
+                           (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2),
+                           (SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)))
 
 if __name__ == '__main__':
     test_all()
