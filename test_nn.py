@@ -189,31 +189,31 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, init=False, debug=Fals
         test_init()
         first_net, second_net = neural_cascade.nn_init(sizes=sizes, batch_sizes=batch_sizes, learning_rate=0.01)
 
-        # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
-        # print("Total {} images for learning".format(ind))
+    # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
+    # print("Total {} images for learning".format(ind))
 
-        train_set = np.array(list(train_set_without_negatives.keys()))
-        train_set.sort()
-        # TODO: remove magic numbers
-        train_set = train_set[:(indexes[0] + indexes[1])]
-        lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
+    train_set = np.array(list(train_set_without_negatives.keys()))
+    train_set.sort()
+    # TODO: remove magic numbers
+    train_set = train_set[:(indexes[0] + indexes[1])]
+    lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
-        neural_cascade.learning(train_set=train_set,
-                                lbl_train=lbl_train,
-                                neural_nets=(first_net, second_net),
-                                nn_for_learn=[True, True],
-                                indexes=indexes,
-                                debug=debug)
+    neural_cascade.learning(train_set=train_set,
+                            lbl_train=lbl_train,
+                            neural_nets=(first_net, second_net),
+                            nn_for_learn=[True, True],
+                            indexes=indexes,
+                            debug=debug)
 
-        first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-                              .format(batch_sizes[0], filters[0][0], indexes[0], filters[0][1]))
+    first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
+                          .format(batch_sizes[0], filters[0][0], indexes[0], filters[0][1]))
 
-        second_net.save_params("second_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-                               .format(batch_sizes[1], filters[1][0], indexes[1], filters[1][1]))
+    second_net.save_params("second_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
+                           .format(batch_sizes[1], filters[1][0], indexes[1], filters[1][1]))
 
-        nn_params = ("first_lvl_test_batch_size_50_filter_numbers_100_on_75_image_learn_with_(5, 5)_filters_size",
-                     "second_lvl_test_batch_size_30_filter_numbers_200_on_150_image_learn")
-        testing_results((first_net, second_net), nn_params, (first_net, second_net))
+    nn_params = ("first_lvl_test_batch_size_50_filter_numbers_100_on_75_image_learn_with_(5, 5)_filters_size",
+                 "second_lvl_test_batch_size_30_filter_numbers_200_on_150_image_learn")
+    testing_results((first_net, second_net), nn_params, (first_net, second_net))
 
 
 def test_load_params(batch_size=45, random_state=123, init=False):

@@ -2,34 +2,13 @@ import numpy as np
 
 import prepare_images
 from nn import Network, convert48to12, convert48to24
-
-SUB_IMG_WIDTH = 48
-SUB_IMG_HEIGHT = 48
-SUB_IMG_LAYERS = 3
+from settings import *
 
 train_set_without_negatives = dict()
 test_set_without_negatives = dict()
 
-NEGATIVE_MULTIPLIER = 2
 
-first_ind = 75
-second_ind = 250
-
-first_batch_size = 50
-second_batch_size = 30
-third_batch_size = 30
-# alfa = 0.01
-first_filter_numbers = 100
-second_filter_numbers = 200
-third_filter_numbers = 200
-first_filter_size = (5, 5)
-second_filter_size = (7, 7)
-third_filter_size = (7, 7)
-
-NET_12, NET_12_CALIBRATION, NET_24, NET_24_CALIBRATION, NET_48 = list(range(5))
-
-
-def nn_init(sizes, batch_sizes, learning_rate=0.01):
+def nn_init(sizes, batch_sizes, learning_rate=alfa):
     # size = (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4)
     layers, height, width = sizes[NET_12]
     first_net = Network(learning_rate=learning_rate,
