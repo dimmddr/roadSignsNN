@@ -1,6 +1,7 @@
 import csv
 import datetime as dt
 import os
+from functools import lru_cache
 
 import numpy as np
 
@@ -8,22 +9,16 @@ import neural_cascade
 import nn
 import prepare_images
 from image import Image
-
-# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
-# annotation_path = dataset_path + 'allAnnotations.csv'
-# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
-# annotation_path = dataset_path + 'frameAnnotations.csv'
+from settings import *
 
 
+@lru_cache(maxsize=None)
 def test_init(seed=16):
-    # global train_set_complete
-    global train_set_without_negatives
-    global test_set_without_negatives
     np.random.seed(seed)
 
     # Read data from files
     # Read learning set
-    image_data = np.genfromtxt(annotation_learning_path, delimiter=';', names=True, dtype=None)
+    image_data = np.genfromtxt(ANNOTATION_LEARNING_PATH, delimiter=';', names=True, dtype=None)
     files = dict()
     for image in image_data:
         filepath = image['Filename']
@@ -40,7 +35,7 @@ def test_init(seed=16):
     train_set_without_negatives = files
 
     # Read test set
-    image_data = np.genfromtxt(annotation_test_path, delimiter=';', names=True, dtype=None)
+    image_data = np.genfromtxt(ANNOTATION_TEST_PATH, delimiter=';', names=True, dtype=None)
     files = dict()
     for image in image_data:
         filepath = image['Filename']
@@ -55,6 +50,8 @@ def test_init(seed=16):
                                      coordinates=(image['Upper_left_corner_X'], image['Upper_left_corner_Y'],
                                                   image['Lower_right_corner_X'], image['Lower_right_corner_Y']))
     test_set_without_negatives = files
+
+    return {'train_set': train_set_without_negatives, 'test_set': test_set_without_negatives}
 
 
 def write_results(result: list, test_name):

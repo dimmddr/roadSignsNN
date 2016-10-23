@@ -32,3 +32,7 @@ NET_12, NET_12_CALIBRATION, NET_24, NET_24_CALIBRATION, NET_48 = list(range(5))
 DATASET_PATH = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
 ANNOTATION_LEARNING_PATH = DATASET_PATH + 'learningAnnotations.csv'
 ANNOTATION_TEST_PATH = DATASET_PATH + 'testAnnotations.csv'
+# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
+# annotation_path = dataset_path + 'allAnnotations.csv'
+# dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
+# annotation_path = dataset_path + 'frameAnnotations.csv'
