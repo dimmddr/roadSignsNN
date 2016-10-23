@@ -89,7 +89,7 @@ def write_results(result: list, test_name):
 
 
 # Can test only first n nets, cannot test something from the middle without first ones
-def testing_results(neural_nets, nn_params, nn_for_test, numbers_of_test_imgs=10):
+def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negatives, numbers_of_test_imgs=10):
     first_net, second_net = neural_nets[:2]
     first_net.load_params(nn_params[0])
 
@@ -148,39 +148,39 @@ def testing_results(neural_nets, nn_params, nn_for_test, numbers_of_test_imgs=10
 
 
 def test_classification(seed=16, init=False):
-    if not init:
-        test_init()
-        ind = int(np.floor(len(train_set_without_negatives) * 0.75))
-        signs, labels, labels_dict = prepare_images.get_roi_from_images(train_set_without_negatives.values(),
-                                                                        dataset_path)
-        np.random.seed(seed)
-        np.random.shuffle(signs)
-        np.random.seed(seed)
-        np.random.shuffle(labels)
-        train_set_sign = signs[:ind]
-        train_set_lbls = labels[:ind]
-        test_set_sign = signs[ind:]
-        test_set_lbls = labels[ind:]
-        clf = nn.Clf(batch_size=50, output_size=len(labels_dict))
-        clf.learning(train_set_sign, train_set_lbls)
-        y_pred = clf.predict(test_set_sign)
-        tmp = test_set_lbls - y_pred
+    train_sets = test_init()
+    train_set_without_negatives = train_sets['train_set']
+    ind = int(np.floor(len(train_set_without_negatives) * 0.75))
+    signs, labels, labels_dict = prepare_images.get_roi_from_images(train_set_without_negatives.values(),
+                                                                    dataset_path)
+    np.random.seed(seed)
+    np.random.shuffle(signs)
+    np.random.seed(seed)
+    np.random.shuffle(labels)
+    train_set_sign = signs[:ind]
+    train_set_lbls = labels[:ind]
+    test_set_sign = signs[ind:]
+    test_set_lbls = labels[ind:]
+    clf = nn.Clf(batch_size=50, output_size=len(labels_dict))
+    clf.learning(train_set_sign, train_set_lbls)
+    y_pred = clf.predict(test_set_sign)
+    tmp = test_set_lbls - y_pred
 
-        tp = np.sum((y_pred == 1) & (test_set_lbls == 1))
-        tn = np.sum((y_pred == 0) & (test_set_lbls == 0))
-        fp = np.sum(tmp == -1)
-        fn = np.sum(tmp == 1)
-        f1_score = 2 * tp / (2 * tp + fn + fp)
-        print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
-              .format(f1_score, tp, tn, fp, fn))
+    tp = np.sum((y_pred == 1) & (test_set_lbls == 1))
+    tn = np.sum((y_pred == 0) & (test_set_lbls == 0))
+    fp = np.sum(tmp == -1)
+    fn = np.sum(tmp == 1)
+    f1_score = 2 * tp / (2 * tp + fn + fp)
+    print(" f1 score = {}, true positive = {}, true negative = {}, false positive = {}, false negative = {}"
+          .format(f1_score, tp, tn, fp, fn))
 
 
 def test_neural_net(indexes, batch_sizes, filters, sizes, init=False, debug=False):
     # TODO: make filter meaning again
     # I don't want to do it multiply times, it is time costly to read large file
-    if not init:
-        test_init()
-        first_net, second_net = neural_cascade.nn_init(sizes=sizes, batch_sizes=batch_sizes, learning_rate=0.01)
+    train_sets = test_init()
+    train_set_without_negatives = train_sets['train_set']
+    first_net, second_net = neural_cascade.nn_init(sizes=sizes, batch_sizes=batch_sizes, learning_rate=0.01)
 
     # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
     # print("Total {} images for learning".format(ind))
@@ -206,12 +206,13 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, init=False, debug=Fals
 
     nn_params = ("first_lvl_test_batch_size_50_filter_numbers_100_on_75_image_learn_with_(5, 5)_filters_size",
                  "second_lvl_test_batch_size_30_filter_numbers_200_on_150_image_learn")
-    testing_results((first_net, second_net), nn_params, (first_net, second_net))
+    testing_results((first_net, second_net), nn_params, (first_net, second_net),
+                    test_set_without_negatives=train_sets['test_set'])
 
 
 def test_load_params(batch_size=45, random_state=123, init=False):
-    if not init:
-        test_init()
+    train_sets = test_init()
+    train_set_without_negatives = train_sets['train_set']
     net = nn.Network(batch_size=batch_size, random_state=random_state)
     test_img = np.array(list(train_set_without_negatives.keys()))
     test_img.sort()
