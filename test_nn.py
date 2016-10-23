@@ -14,10 +14,6 @@ from image import Image
 # dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
 # annotation_path = dataset_path + 'frameAnnotations.csv'
 
-dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
-annotation_learning_path = dataset_path + 'learningAnnotations.csv'
-annotation_test_path = dataset_path + 'testAnnotations.csv'
-
 
 def test_init(seed=16):
     # global train_set_complete

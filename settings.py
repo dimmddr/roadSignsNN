@@ -1,21 +1,34 @@
+# Negative to positive ratio
 NEGATIVE_MULTIPLIER = 2
 
-first_ind = 75
-second_ind = 250
+# Images count for neural nets training
+FIRST_IND = 75
+SECOND_IND = 250
 
-first_batch_size = 50
-second_batch_size = 30
-third_batch_size = 30
-alfa = 0.01
-first_filter_numbers = 100
-second_filter_numbers = 200
-third_filter_numbers = 200
-first_filter_size = (5, 5)
-second_filter_size = (7, 7)
-third_filter_size = (7, 7)
+# Batch sizes for neural nets
+FIRST_BATCH_SIZE = 50
+SECOND_BATCH_SIZE = 30
+THIRD_BATCH_SIZE = 30
+# Learning ratio
+ALFA = 0.01
+# Filter counts
+FIRST_FILTER_NUMBERS = 100
+SECOND_FILTER_NUMBERS = 200
+THIRD_FILTER_NUMBERS = 200
+# Filter sizes
+FIRST_FILTER_SIZE = (5, 5)
+SECOND_FILTER_SIZE = (7, 7)
+THIRD_FILTER_SIZE = (7, 7)
 
-SUB_IMG_WIDTH = 48
-SUB_IMG_HEIGHT = 48
-SUB_IMG_LAYERS = 3
+# Size of image window in picture
+sub_image = {
+    'width': 48,
+    'height': 48,
+    'layers': 3
+}
 
 NET_12, NET_12_CALIBRATION, NET_24, NET_24_CALIBRATION, NET_48 = list(range(5))
+
+DATASET_PATH = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
+ANNOTATION_LEARNING_PATH = DATASET_PATH + 'learningAnnotations.csv'
+ANNOTATION_TEST_PATH = DATASET_PATH + 'testAnnotations.csv'

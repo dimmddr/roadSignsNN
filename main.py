@@ -1,5 +1,6 @@
 import data_utils
-from test_nn import *
+import test_nn
+import settings
 
 
 def data_analysis():
@@ -18,14 +19,15 @@ def test_all():
     # test_classification()
     # data_analysis()
 
-    # temp
-    SUB_IMG_WIDTH = 48
-    SUB_IMG_HEIGHT = 48
-    SUB_IMG_LAYERS = 3
-    test_neural_net(indexes=[5, 15], batch_sizes=(5, 15), filters=[[5, 15], [25, 30]],
-                    sizes=((SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4),
-                           (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2),
-                           (SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH)))
+    test_nn.test_neural_net(
+        indexes=[5, 15],
+        batch_sizes=(5, 15),
+        filters=[[5, 15], [25, 30]],
+        sizes=((settings.sub_image['layers'], settings.sub_image['height'] // 4, settings.sub_image['width'] // 4),
+               (settings.sub_image['layers'], settings.sub_image['height'] // 2, settings.sub_image['width'] // 2),
+               (settings.sub_image['layers'], settings.sub_image['height'], settings.sub_image['width']))
+    )
+
 
 if __name__ == '__main__':
     test_all()
