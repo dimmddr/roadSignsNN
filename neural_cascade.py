@@ -8,7 +8,7 @@ train_set_without_negatives = dict()
 test_set_without_negatives = dict()
 
 
-def nn_init(sizes, batch_sizes, learning_rate=alfa):
+def nn_init(sizes, batch_sizes, learning_rate=0.1):
     # size = (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4)
     layers, height, width = sizes[NET_12]
     first_net = Network(learning_rate=learning_rate,

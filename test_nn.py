@@ -175,7 +175,7 @@ def test_classification(seed=16, init=False):
           .format(f1_score, tp, tn, fp, fn))
 
 
-def test_neural_net(indexes, batch_sizes, filters, sizes, init=False, debug=False):
+def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     # TODO: make filter meaning again
     # I don't want to do it multiply times, it is time costly to read large file
     train_sets = test_init()
