@@ -108,7 +108,7 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
     tn_percent_all = np.zeros(numbers_of_test_imgs)
 
     for i in range(test_img.shape[0]):
-        imgs, lbls, coords = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
+        imgs, lbls, coords = prepare_images.prepare(DATASET_PATH + test_img[i].decode('utf8'), lbl_test[i])
         y_pred = np.zeros_like(lbls)
         for j in range(imgs.shape[0]):
             # TODO добавить nms в цепочку
@@ -137,7 +137,7 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
         tmp = np.arange(lbls.shape[0] * lbls.shape[1]).reshape(lbls.shape)
         tmp = tmp[y_pred == 1]
         rects = [coords.get(key, None) for key in tmp]
-        prepare_images.save_img_with_rectangles(dataset_path, test_img[i].decode('utf8'), rects)
+        prepare_images.save_img_with_rectangles(DATASET_PATH, test_img[i].decode('utf8'), rects)
         # prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects, show_type='opencv')
         # rects = prepare_images.nms(rects, 0.3)
         # prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects, show_type='opencv')
@@ -147,12 +147,12 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
     return tp_all, tn_all, fp_all, fn_all, f1_score_all, tn_percent_all
 
 
-def test_classification(seed=16, init=False):
+def test_classification(seed=16):
     train_sets = test_init()
     train_set_without_negatives = train_sets['train_set']
     ind = int(np.floor(len(train_set_without_negatives) * 0.75))
     signs, labels, labels_dict = prepare_images.get_roi_from_images(train_set_without_negatives.values(),
-                                                                    dataset_path)
+                                                                    DATASET_PATH)
     np.random.seed(seed)
     np.random.shuffle(signs)
     np.random.seed(seed)
@@ -180,7 +180,8 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     # I don't want to do it multiply times, it is time costly to read large file
     train_sets = test_init()
     train_set_without_negatives = train_sets['train_set']
-    first_net, second_net = neural_cascade.nn_init(sizes=sizes, batch_sizes=batch_sizes, learning_rate=0.01)
+    first_net, second_net = neural_cascade.nn_init(sizes=sizes, filters=filters, batch_sizes=batch_sizes,
+                                                   learning_rate=0.01)
 
     # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
     # print("Total {} images for learning".format(ind))
@@ -218,7 +219,7 @@ def test_load_params(batch_size=45, random_state=123, init=False):
     test_img.sort()
     lbl_test = np.array([train_set_without_negatives.get(key).get_coordinates() for key in test_img])
     for i in range(test_img.shape[0]):
-        imgs, lbls = prepare_images.prepare(dataset_path + test_img[i].decode('utf8'), lbl_test[i])
+        imgs, lbls = prepare_images.prepare(DATASET_PATH + test_img[i].decode('utf8'), lbl_test[i])
         y_pred = net.predict_values(imgs)
         tmp = lbls - y_pred
 

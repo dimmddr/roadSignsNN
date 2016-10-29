@@ -4,7 +4,7 @@ import settings
 
 
 def data_analysis():
-    data_utils.analyse_sign_frame_size_fluctuations(annotation_learning_path, "sign_frame_size_fluctuations")
+    data_utils.analyse_sign_frame_size_fluctuations(settings.ANNOTATION_LEARNING_PATH, "sign_frame_size_fluctuations")
 
 
 def test_all():

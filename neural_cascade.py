@@ -8,15 +8,15 @@ train_set_without_negatives = dict()
 test_set_without_negatives = dict()
 
 
-def nn_init(sizes, batch_sizes, learning_rate=0.1):
+def nn_init(sizes, batch_sizes, filters, learning_rate=0.1):
     # size = (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4)
     layers, height, width = sizes[NET_12]
     first_net = Network(learning_rate=learning_rate,
                         input_shape=(batch_sizes[NET_12], layers, height, width),
                         random_state=123
                         )
-
-    first_net.add_convolution_layer(filter_numbers=first_filter_numbers, filter_size=first_filter_size)
+    first_filter = filters[0]
+    first_net.add_convolution_layer(filter_numbers=first_filter[0], filter_size=first_filter[1])
     first_net.add_pooling_layer(pool_size=(2, 2))
     first_net.add_dropout_layer(p=.5)
     first_net.add_fully_connected_layer(hidden_layer_size=500)
@@ -30,7 +30,8 @@ def nn_init(sizes, batch_sizes, learning_rate=0.1):
                          input_shape=(batch_sizes[NET_24], layers, height, width),
                          random_state=123
                          )
-    second_net.add_convolution_layer(filter_numbers=second_filter_numbers, filter_size=second_filter_size)
+    second_filter = filters[1]
+    second_net.add_convolution_layer(filter_numbers=second_filter[0], filter_size=second_filter[1])
     second_net.add_pooling_layer(pool_size=(2, 2))
     second_net.add_dropout_layer(p=.5)
     second_net.add_fully_connected_layer(hidden_layer_size=500)
@@ -44,7 +45,8 @@ def nn_init(sizes, batch_sizes, learning_rate=0.1):
                         input_shape=(batch_sizes[NET_48], layers, height, width),
                         random_state=123
                         )
-    third_net.add_convolution_layer(filter_numbers=third_filter_numbers, filter_size=third_filter_size)
+    third_filter = filters[2]
+    third_net.add_convolution_layer(filter_numbers=third_filter[0], filter_size=third_filter[1])
     third_net.add_pooling_layer(pool_size=(2, 2))
     third_net.add_dropout_layer(p=.5)
     third_net.add_fully_connected_layer(hidden_layer_size=500)
