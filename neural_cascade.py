@@ -63,8 +63,8 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, inde
         for i in range(0, indexes[NET_12]):
             if debug:
                 print(i)
-            all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                            lbl_train[i], debug=debug)
+            all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                                         lbl_train[i], debug=debug)
             if debug:
                 print("Image prepared")
             images = all_images[all_labels == 1]
@@ -86,8 +86,8 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, inde
         if debug:
             print("Second network learning")
         for i in range(indexes[NET_24]):
-            all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                            lbl_train[i], debug=debug)
+            all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                                         lbl_train[i], debug=debug)
             predicted_labels = neural_nets[NET_12].predict(all_images)
             images = all_images[predicted_labels == 1]
             labels = all_labels[predicted_labels == 1]
@@ -97,8 +97,8 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, inde
         if debug:
             print("Second network learning")
         for i in range(indexes[NET_48]):
-            all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                            lbl_train[i], debug=debug)
+            all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                                         lbl_train[i], debug=debug)
             predicted_labels = neural_nets[NET_12].predict(all_images)
             images = all_images[predicted_labels == 1]
             predicted_labels = neural_nets[NET_24].predict(images)

@@ -27,7 +27,7 @@ sub_image = {
     'layers': 3
 }
 
-NET_12, NET_12_CALIBRATION, NET_24, NET_24_CALIBRATION, NET_48 = list(range(5))
+NET_12, NET_24, NET_48, NET_12_CALIBRATION, NET_24_CALIBRATION = list(range(5))
 
 DATASET_PATH = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/"
 ANNOTATION_LEARNING_PATH = DATASET_PATH + 'learningAnnotations.csv'

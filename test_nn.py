@@ -177,15 +177,10 @@ def test_classification(seed=16):
 
 def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     # TODO: make filter meaning again
-    # I don't want to do it multiply times, it is time costly to read large file
     train_sets = test_init()
     train_set_without_negatives = train_sets['train_set']
-    first_net, second_net = neural_cascade.nn_init(sizes=sizes, filters=filters, batch_sizes=batch_sizes,
-                                                   learning_rate=0.01)
-
-    # ind = int(np.floor(len(list(train_set_without_negatives.keys())) * 0.75))
-    # print("Total {} images for learning".format(ind))
-
+    first_net, second_net, third_net = neural_cascade.nn_init(sizes=sizes, filters=filters, batch_sizes=batch_sizes,
+                                                              learning_rate=0.01)
     train_set = np.array(list(train_set_without_negatives.keys()))
     train_set.sort()
     # TODO: remove magic numbers
@@ -193,6 +188,7 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
     neural_cascade.learning(train_set=train_set,
+                            dataset_path=DATASET_PATH,
                             lbl_train=lbl_train,
                             neural_nets=(first_net, second_net),
                             nn_for_learn=[True, True],

@@ -20,9 +20,9 @@ def test_all():
     # data_analysis()
 
     test_nn.test_neural_net(
-        indexes=[5, 15],
-        batch_sizes=(5, 15),
-        filters=[[5, 15], [25, 30]],
+        indexes=[5, 15, 25],
+        batch_sizes=(5, 15, 15),
+        filters=[[15, (3, 3)], [25, (6, 6)], [25, (12, 12)]],
         sizes=((settings.sub_image['layers'], settings.sub_image['height'] // 4, settings.sub_image['width'] // 4),
                (settings.sub_image['layers'], settings.sub_image['height'] // 2, settings.sub_image['width'] // 2),
                (settings.sub_image['layers'], settings.sub_image['height'], settings.sub_image['width']))
