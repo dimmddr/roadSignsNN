@@ -88,7 +88,7 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, inde
         for i in range(indexes[NET_24]):
             all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
                                                                          lbl_train[i], debug=debug)
-            predicted_labels = neural_nets[NET_12].predict(all_images)
+            predicted_labels = neural_nets[NET_12].predict(convert48to12(all_images))
             images = all_images[predicted_labels == 1]
             labels = all_labels[predicted_labels == 1]
             nn_for_learn[NET_24].learning(dataset=convert48to24(images), labels=labels, debug_print=debug, n_epochs=10)
@@ -99,9 +99,9 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, inde
         for i in range(indexes[NET_48]):
             all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
                                                                          lbl_train[i], debug=debug)
-            predicted_labels = neural_nets[NET_12].predict(all_images)
+            predicted_labels = neural_nets[NET_12].predict(convert48to12(all_images))
             images = all_images[predicted_labels == 1]
-            predicted_labels = neural_nets[NET_24].predict(images)
+            predicted_labels = neural_nets[NET_24].predict(convert48to24(images))
             images = all_images[predicted_labels == 1]
             labels = all_labels[predicted_labels == 1]
-            nn_for_learn[NET_48].learning(dataset=convert48to24(images), labels=labels, debug_print=debug, n_epochs=10)
+            nn_for_learn[NET_48].learning(dataset=images, labels=labels, debug_print=debug, n_epochs=10)
