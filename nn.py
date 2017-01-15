@@ -65,8 +65,9 @@ class Network(object):
 
         self.train_fn = theano.function([self.input, self.target], loss, updates=self.updates,
                                         allow_input_downcast=True)
-        self.predict_values = theano.function([self.input], T.argmax(self.prediction, axis=1),
-                                              allow_input_downcast=True)
+        outputs = T.argmax(self.prediction, axis=1)
+        # self.predict_values = theano.function([self.input], self.prediction, allow_input_downcast=True)
+        self.predict_values = theano.function([self.input], outputs, allow_input_downcast=True)
 
         self.test_prediction = lasagne.layers.get_output(self.network, deterministic=True)
         self.test_loss = lasagne.objectives.categorical_crossentropy(self.test_prediction, self.target)
@@ -168,9 +169,14 @@ class Network(object):
 
     def predict(self, dataset):
         size = self.batch_size
+        shape = dataset.shape
+        if len(shape) == 5:
+            dataset = np.reshape(dataset, (shape[0] * shape[1], shape[2], shape[3], shape[4]))
         res = np.zeros(dataset.shape[0])
         for i in range(dataset.shape[0] // size):
-            res[i * size: i * size + size] = self.predict_values(dataset[i * size: i * size + size, :, :, :])
+            res[i * size: (i + 1) * size] = self.predict_values(dataset[i * size: (i + 1) * size, :, :, :])
+        if len(shape) == 5:
+            res = np.reshape(res, (shape[0], shape[1]))
         return res
 
     def save_params(self, filename):

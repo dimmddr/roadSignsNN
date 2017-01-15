@@ -191,7 +191,7 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
                             dataset_path=DATASET_PATH,
                             lbl_train=lbl_train,
                             neural_nets=(first_net, second_net),
-                            nn_for_learn=[True, True],
+                            nn_for_learn=[True, True, True],
                             indexes=indexes,
                             debug=debug)
 
