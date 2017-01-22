@@ -99,9 +99,9 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, inde
         for i in range(indexes[NET_48]):
             all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
                                                                          lbl_train[i], debug=debug)
-            predicted_labels = neural_nets[NET_12].predict(all_images[:, :, :, 1::4, 1::4])
-            images = all_images[predicted_labels == 1]
-            predicted_labels = neural_nets[NET_24].predict(images[:, :, 1::2, 1::2])
-            images = all_images[predicted_labels == 1]
-            labels = all_labels[predicted_labels == 1]
+            predicted_labels_1 = neural_nets[NET_12].predict(all_images[:, :, :, 1::4, 1::4])
+            images = all_images[predicted_labels_1 == 1]
+            predicted_labels_2 = neural_nets[NET_24].predict(images[:, :, 1::2, 1::2])
+            images = images[predicted_labels_2 == 1]
+            labels = all_labels[predicted_labels_1 == 1][predicted_labels_2 == 1]
             neural_nets[NET_48].learning(dataset=images, labels=labels, debug_print=debug, n_epochs=10)

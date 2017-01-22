@@ -190,16 +190,16 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     neural_cascade.learning(train_set=train_set,
                             dataset_path=DATASET_PATH,
                             lbl_train=lbl_train,
-                            neural_nets=(first_net, second_net),
+                            neural_nets=(first_net, second_net, third_net),
                             nn_for_learn=[True, True, True],
                             indexes=indexes,
                             debug=debug)
 
-    first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-                          .format(batch_sizes[0], filters[0][0], indexes[0], filters[0][1]))
-
-    second_net.save_params("second_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-                           .format(batch_sizes[1], filters[1][0], indexes[1], filters[1][1]))
+    # first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
+    #                       .format(batch_sizes[0], filters[0][0], indexes[0], filters[0][1]))
+    #
+    # second_net.save_params("second_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
+    #                        .format(batch_sizes[1], filters[1][0], indexes[1], filters[1][1]))
 
     nn_params = ("first_lvl_test_batch_size_50_filter_numbers_100_on_75_image_learn_with_(5, 5)_filters_size",
                  "second_lvl_test_batch_size_30_filter_numbers_200_on_150_image_learn")
