@@ -90,11 +90,10 @@ def write_results(result: list, test_name):
 
 # Can test only first n nets, cannot test something from the middle without first ones
 def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negatives, numbers_of_test_imgs=10):
-    first_net, second_net = neural_nets[:2]
-    first_net.load_params(nn_params[0])
+    neural_nets[0].load_params(nn_params[0])
 
     if nn_for_test[1]:
-        second_net.load_params(nn_params[1])
+        neural_nets[1].load_params(nn_params[1])
 
     print("Testing...")
     test_img = np.array(list(test_set_without_negatives.keys())[:numbers_of_test_imgs])
@@ -112,10 +111,10 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
         y_pred = np.zeros_like(lbls)
         for j in range(imgs.shape[0]):
             # TODO добавить nms в цепочку
-            y_pred[j] = first_net.predict(nn.convert48to24(imgs[j]))
+            y_pred[j] = neural_nets[0].predict(nn.convert48to12(imgs[j]))
         if nn_for_test[1]:
             tmp = imgs[y_pred == 1]
-            y_pred[y_pred == 1] = second_net.predict(tmp)
+            y_pred[y_pred == 1] = neural_nets[1].predict(nn.convert48to24(tmp))
 
         tmp = lbls - y_pred
 
@@ -179,8 +178,8 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     # TODO: make filter meaning again
     train_sets = test_init()
     train_set_without_negatives = train_sets['train_set']
-    first_net, second_net, third_net = neural_cascade.nn_init(sizes=sizes, filters=filters, batch_sizes=batch_sizes,
-                                                              learning_rate=0.01)
+    neural_nets = neural_cascade.nn_init(sizes=sizes, filters=filters, batch_sizes=batch_sizes,
+                                         learning_rate=0.01)
     train_set = np.array(list(train_set_without_negatives.keys()))
     train_set.sort()
     # TODO: remove magic numbers
@@ -190,21 +189,25 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
     neural_cascade.learning(train_set=train_set,
                             dataset_path=DATASET_PATH,
                             lbl_train=lbl_train,
-                            neural_nets=(first_net, second_net, third_net),
+                            neural_nets=neural_nets,
                             nn_for_learn=[True, True, True],
                             indexes=indexes,
                             debug=debug)
 
-    # first_net.save_params("first_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-    #                       .format(batch_sizes[0], filters[0][0], indexes[0], filters[0][1]))
-    #
-    # second_net.save_params("second_lvl_test_batch_size_{}_filter_numbers_{}_on_{}_image_learn_with_{}_filters_size"
-    #                        .format(batch_sizes[1], filters[1][0], indexes[1], filters[1][1]))
+    nn_params = []
+    for i, net in enumerate(neural_nets):
+        name = 'lvl_{lvl_number}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
+               '_image_learn_with_{filters_sizes}_filters_size'.format(
+            lvl_number=i,
+            batch_size=batch_sizes[i - 1],
+            filters_count=filters[i - 1][0],
+            image_counts=indexes[0],
+            filters_sizes=filters[0][1]
+        )
+        nn_params.append(name)
+        net.save_params(name)
 
-    nn_params = ("first_lvl_test_batch_size_50_filter_numbers_100_on_75_image_learn_with_(5, 5)_filters_size",
-                 "second_lvl_test_batch_size_30_filter_numbers_200_on_150_image_learn")
-    testing_results((first_net, second_net), nn_params, (first_net, second_net),
-                    test_set_without_negatives=train_sets['test_set'])
+    testing_results(neural_nets, tuple(nn_params), neural_nets, test_set_without_negatives=train_sets['test_set'])
 
 
 def test_load_params(batch_size=45, random_state=123, init=False):
