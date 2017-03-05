@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
-# Max possible size of image
 import nn
+from settings import COVER_PERCENT
 
 IMG_WIDTH = 1025
 IMG_HEIGHT = 523
@@ -13,7 +13,6 @@ IMG_LAYERS = 3
 SUB_IMG_WIDTH = 48
 SUB_IMG_HEIGHT = 48
 SUB_IMG_LAYERS = 3
-COVER_PERCENT = 0.6
 WIDTH = 2
 HEIGHT = 1
 LAYERS = 0
@@ -178,56 +177,3 @@ def create_synthetic_data(imgs):
     total = imgs.shape[0] * sizes.shape[0] * 2  # *2
     res = []
     return imgs
-
-
-def nms(boxes, overlap_threshold):
-    if 0 == len(boxes):
-        return []
-
-    boxes = np.array(boxes)
-
-    # initialize the list of picked indexes
-    pick = []
-
-    # grab the coordinates of the bounding boxes
-    xmin = boxes[:, 0]
-    ymin = boxes[:, 1]
-    xmax = boxes[:, 2]
-    ymax = boxes[:, 3]
-
-    # compute the area of the bounding boxes and sort the bounding
-    # boxes by the bottom-right y-coordinate of the bounding box
-    area = (xmax - xmin + 1) * (ymax - ymin + 1)
-    idxs = np.argsort(ymax)
-
-    # keep looping while some indexes still remain in the indexes
-    # list
-    while len(idxs) > 0:
-        # grab the last index in the indexes list and add the
-        # index value to the list of picked indexes
-        last = len(idxs) - 1
-        i = idxs[last]
-        pick.append(i)
-
-        # find the largest (x, y) coordinates for the start of
-        # the bounding box and the smallest (x, y) coordinates
-        # for the end of the bounding box
-        xx1 = np.maximum(xmin[i], xmin[idxs[:last]])
-        yy1 = np.maximum(ymin[i], ymin[idxs[:last]])
-        xx2 = np.minimum(xmax[i], xmax[idxs[:last]])
-        yy2 = np.minimum(ymax[i], ymax[idxs[:last]])
-
-        # compute the width and height of the bounding box
-        w = np.maximum(0, xx2 - xx1 + 1)
-        h = np.maximum(0, yy2 - yy1 + 1)
-
-        # compute the ratio of overlap
-        overlap = (w * h) / area[idxs[:last]]
-
-        # delete all indexes from the index list that have
-        idxs = np.delete(idxs, np.concatenate(([last],
-                                               np.where(overlap > overlap_threshold)[0])))
-
-    # return only the bounding boxes that were picked using the
-    # integer data type
-    return boxes[pick], pick

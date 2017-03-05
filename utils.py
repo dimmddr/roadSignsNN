@@ -1,7 +1,9 @@
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+
+import settings
 
 
 def analyse_sign_frame_size_fluctuations(annotation_path, output_file):
@@ -41,3 +43,56 @@ def analyse_sign_frame_size_fluctuations(annotation_path, output_file):
 
         # Annotation tag;
         # Upper left corner X;Upper left corner Y;Lower right corner X;Lower right corner Y;Occluded,On another road
+
+
+def nms(boxes):
+    if 0 == len(boxes):
+        return []
+
+    boxes = np.array(boxes)
+
+    # initialize the list of picked indexes
+    pick = []
+
+    # grab the coordinates of the bounding boxes
+    xmin = boxes[:, 0]
+    ymin = boxes[:, 1]
+    xmax = boxes[:, 2]
+    ymax = boxes[:, 3]
+
+    # compute the area of the bounding boxes and sort the bounding
+    # boxes by the bottom-right y-coordinate of the bounding box
+    area = (xmax - xmin + 1) * (ymax - ymin + 1)
+    idxs = np.argsort(ymax)
+
+    # keep looping while some indexes still remain in the indexes
+    # list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list and add the
+        # index value to the list of picked indexes
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+
+        # find the largest (x, y) coordinates for the start of
+        # the bounding box and the smallest (x, y) coordinates
+        # for the end of the bounding box
+        xx1 = np.maximum(xmin[i], xmin[idxs[:last]])
+        yy1 = np.maximum(ymin[i], ymin[idxs[:last]])
+        xx2 = np.minimum(xmax[i], xmax[idxs[:last]])
+        yy2 = np.minimum(ymax[i], ymax[idxs[:last]])
+
+        # compute the width and height of the bounding box
+        w = np.maximum(0, xx2 - xx1 + 1)
+        h = np.maximum(0, yy2 - yy1 + 1)
+
+        # compute the ratio of overlap
+        overlap = (w * h) / area[idxs[:last]]
+
+        # delete all indexes from the index list that have
+        idxs = np.delete(idxs, np.concatenate(([last],
+                                               np.where(overlap > settings.COVER_PERCENT)[0])))
+
+    # return only the bounding boxes that were picked using the
+    # integer data type
+    return boxes[pick], pick

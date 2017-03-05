@@ -89,6 +89,7 @@ def write_results(result: list, test_name):
 
 
 # Can test only first n nets, cannot test something from the middle without first ones
+# Hardcode for test 3 neural nets
 def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negatives, numbers_of_test_imgs=10):
     neural_nets[0].load_params(nn_params[0])
 
@@ -115,6 +116,9 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
         if nn_for_test[1]:
             tmp = imgs[y_pred == 1]
             y_pred[y_pred == 1] = neural_nets[1].predict(nn.convert48to24(tmp))
+        if nn_for_test[2]:
+            tmp = imgs[y_pred == 1]
+            y_pred[y_pred == 1] = neural_nets[2].predict(tmp)
 
         tmp = lbls - y_pred
 
@@ -196,7 +200,7 @@ def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
 
     nn_params = []
     for i, net in enumerate(neural_nets):
-        name = 'lvl_{lvl_number}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
+        name = 'weights\lvl_{lvl_number}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
                '_image_learn_with_{filters_sizes}_filters_size'.format(
             lvl_number=i,
             batch_size=batch_sizes[i - 1],

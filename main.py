@@ -1,10 +1,10 @@
-import data_utils
 import test_nn
 import settings
+import utils
 
 
 def data_analysis():
-    data_utils.analyse_sign_frame_size_fluctuations(settings.ANNOTATION_LEARNING_PATH, "sign_frame_size_fluctuations")
+    utils.analyse_sign_frame_size_fluctuations(settings.ANNOTATION_LEARNING_PATH, "sign_frame_size_fluctuations")
 
 
 def test_all():
@@ -21,7 +21,7 @@ def test_all():
     # TODO: Make params like filters sizes and batch sizes into dict for every network
 
     test_nn.test_neural_net(
-        indexes=[1, 2, 3],
+        indexes=[10, 20, 30],
         batch_sizes=(5, 15, 15),
         filters=[[15, (3, 3)], [24, (6, 6)], [48, (12, 12)]],
         sizes=((settings.sub_image['layers'], settings.sub_image['height'] // 4, settings.sub_image['width'] // 4),

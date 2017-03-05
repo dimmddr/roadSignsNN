@@ -8,52 +8,69 @@ train_set_without_negatives = dict()
 test_set_without_negatives = dict()
 
 
+def neural_net_init(
+        sizes,
+        learning_rate,
+        batch_sizes,
+        nn_filter,
+        pool_size=(2, 2),
+        hidden_layer_size=500,
+        softmax_units=2
+):
+    layers, height, width = sizes
+    neural_net = Network(learning_rate=learning_rate,
+                         input_shape=(batch_sizes, layers, height, width),
+                         random_state=123)
+    neural_net.add_convolution_layer(filter_numbers=nn_filter[0], filter_size=nn_filter[1])
+    neural_net.add_pooling_layer(pool_size=pool_size)
+    neural_net.add_dropout_layer(p=.5)
+    neural_net.add_fully_connected_layer(hidden_layer_size=hidden_layer_size)
+    neural_net.add_dropout_layer(p=.5)
+    neural_net.add_softmax_layer(unit_numbers=softmax_units)
+    neural_net.initialize()
+    return neural_net
+
+
 def nn_init(sizes, batch_sizes, filters, learning_rate=0.1):
     # size = (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4)
-    layers, height, width = sizes[NET_12]
-    first_net = Network(learning_rate=learning_rate,
-                        input_shape=(batch_sizes[NET_12], layers, height, width),
-                        random_state=123
-                        )
-    first_filter = filters[0]
-    first_net.add_convolution_layer(filter_numbers=first_filter[0], filter_size=first_filter[1])
-    first_net.add_pooling_layer(pool_size=(2, 2))
-    first_net.add_dropout_layer(p=.5)
-    first_net.add_fully_connected_layer(hidden_layer_size=500)
-    first_net.add_dropout_layer(p=.5)
-    first_net.add_softmax_layer(unit_numbers=2)
-    first_net.initialize()
+    first_net = neural_net_init(
+        sizes=sizes[NET_12],
+        learning_rate=learning_rate,
+        batch_sizes=batch_sizes[NET_12],
+        nn_filter=filters[NET_12]
+    )
 
     # SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2
-    layers, height, width = sizes[NET_24]
-    second_net = Network(learning_rate=learning_rate,
-                         input_shape=(batch_sizes[NET_24], layers, height, width),
-                         random_state=123
-                         )
-    second_filter = filters[1]
-    second_net.add_convolution_layer(filter_numbers=second_filter[0], filter_size=second_filter[1])
-    second_net.add_pooling_layer(pool_size=(2, 2))
-    second_net.add_dropout_layer(p=.5)
-    second_net.add_fully_connected_layer(hidden_layer_size=500)
-    second_net.add_dropout_layer(p=.5)
-    second_net.add_softmax_layer(unit_numbers=2)
-    second_net.initialize()
+    second_net = neural_net_init(
+        sizes=sizes[NET_24],
+        learning_rate=learning_rate,
+        batch_sizes=batch_sizes[NET_24],
+        nn_filter=filters[NET_24]
+    )
 
     # SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH
-    layers, height, width = sizes[NET_48]
-    third_net = Network(learning_rate=learning_rate,
-                        input_shape=(batch_sizes[NET_48], layers, height, width),
-                        random_state=123
-                        )
-    third_filter = filters[2]
-    third_net.add_convolution_layer(filter_numbers=third_filter[0], filter_size=third_filter[1])
-    third_net.add_pooling_layer(pool_size=(2, 2))
-    third_net.add_dropout_layer(p=.5)
-    third_net.add_fully_connected_layer(hidden_layer_size=500)
-    third_net.add_dropout_layer(p=.5)
-    third_net.add_softmax_layer(unit_numbers=2)
-    third_net.initialize()
-    return [first_net, second_net, third_net]
+    third_net = neural_net_init(
+        sizes=sizes[NET_48],
+        learning_rate=learning_rate,
+        batch_sizes=batch_sizes[NET_48],
+        nn_filter=filters[NET_48]
+    )
+    # size = (SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 4, SUB_IMG_WIDTH // 4)
+    first_calibrate_net = neural_net_init(
+        sizes=sizes[NET_12],
+        learning_rate=learning_rate,
+        batch_sizes=batch_sizes[NET_12],
+        nn_filter=filters[NET_12]
+    )
+
+    # SUB_IMG_LAYERS, SUB_IMG_HEIGHT // 2, SUB_IMG_WIDTH // 2
+    second_calibrate_net = neural_net_init(
+        sizes=sizes[NET_24],
+        learning_rate=learning_rate,
+        batch_sizes=batch_sizes[NET_24],
+        nn_filter=filters[NET_24]
+    )
+    return [first_net, second_net, third_net, first_calibrate_net, second_calibrate_net]
 
 
 def learning(train_set, dataset_path, lbl_train, neural_nets, nn_for_learn, indexes, debug=False):

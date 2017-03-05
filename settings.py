@@ -36,3 +36,4 @@ ANNOTATION_TEST_PATH = DATASET_PATH + 'testAnnotations.csv'
 # annotation_path = dataset_path + 'allAnnotations.csv'
 # dataset_path = "c:/_Hive/_diploma/LISA Traffic Sign Dataset/signDatabasePublicFramesOnly/vid0/frameAnnotations-vid_cmp2.avi_annotations/"
 # annotation_path = dataset_path + 'frameAnnotations.csv'
+COVER_PERCENT = 0.7
