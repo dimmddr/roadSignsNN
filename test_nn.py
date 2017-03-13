@@ -178,28 +178,27 @@ def test_classification(seed=16):
           .format(f1_score, tp, tn, fp, fn))
 
 
-def test_neural_net(indexes, batch_sizes, filters, sizes, debug=False):
+def test_neural_net(neural_nets_params, debug=False):
     # TODO: make filter meaning again
     train_sets = test_init()
     train_set_without_negatives = train_sets['train_set']
-    neural_nets = neural_cascade.nn_init(sizes=sizes, filters=filters, batch_sizes=batch_sizes,
-                                         learning_rate=0.01)
+    neural_nets = neural_cascade.nn_init(neural_nets_params, learning_rate=0.01)
     train_set = np.array(list(train_set_without_negatives.keys()))
     train_set.sort()
     # TODO: remove magic numbers
-    train_set = train_set[:(indexes[0] + indexes[1])]
+    train_set = train_set[:(neural_nets_params['net_12']['indexes'] + neural_nets_params['net_48']['indexes'])]
     lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
     neural_cascade.learning(train_set=train_set,
                             dataset_path=DATASET_PATH,
                             lbl_train=lbl_train,
                             neural_nets=neural_nets,
-                            nn_for_learn=[True, True, True],
-                            indexes=indexes,
                             debug=debug)
 
     nn_params = []
     for i, net in enumerate(neural_nets):
+        # hack
+        if i >= 3: break
         name = 'weights\lvl_{lvl_number}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
                '_image_learn_with_{filters_sizes}_filters_size'.format(
             lvl_number=i,

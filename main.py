@@ -19,15 +19,45 @@ def test_all():
     # test_classification()
     # data_analysis()
     # TODO: Make params like filters sizes and batch sizes into dict for every network
+    neural_nets_params = {
+        'net_12': {
+            'name': 'First location net',
+            'indexes': 1,
+            'batch_size': 5,
+            'filters': [15, (3, 3)],
+            'sizes': (settings.sub_image['layers'], settings.sub_image['height'] // 4, settings.sub_image['width'] // 4)
+        },
+        'net_24': {
+            'name': 'Second location net',
+            'indexes': 2,
+            'batch_size': 15,
+            'filters': [24, (6, 6)],
+            'sizes': (settings.sub_image['layers'], settings.sub_image['height'] // 2, settings.sub_image['width'] // 2)
+        },
+        'net_48': {
+            'name': 'Third location net',
+            'indexes': 3,
+            'batch_size': 15,
+            'filters': [48, (12, 12)],
+            'sizes': (settings.sub_image['layers'], settings.sub_image['height'], settings.sub_image['width'])
+        },
+        'calibration_net_24': {
+            'name': 'Third location net',
+            'indexes': 3,
+            'batch_size': 15,
+            'filters': [48, (12, 12)],
+            'sizes': (settings.sub_image['layers'], settings.sub_image['height'], settings.sub_image['width'])
+        },
+        'calibration_net_48': {
+            'name': 'Third location net',
+            'indexes': 3,
+            'batch_size': 15,
+            'filters': [48, (12, 12)],
+            'sizes': (settings.sub_image['layers'], settings.sub_image['height'], settings.sub_image['width'])
+        }
+    }
 
-    test_nn.test_neural_net(
-        indexes=[10, 20, 30],
-        batch_sizes=(5, 15, 15),
-        filters=[[15, (3, 3)], [24, (6, 6)], [48, (12, 12)]],
-        sizes=((settings.sub_image['layers'], settings.sub_image['height'] // 4, settings.sub_image['width'] // 4),
-               (settings.sub_image['layers'], settings.sub_image['height'] // 2, settings.sub_image['width'] // 2),
-               (settings.sub_image['layers'], settings.sub_image['height'], settings.sub_image['width']))
-    )
+    test_nn.test_neural_net(neural_nets_params=neural_nets_params)
 
 
 if __name__ == '__main__':
