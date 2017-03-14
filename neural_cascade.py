@@ -101,7 +101,7 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, debug=False):
     for i in range(neural_nets['net_24']['indexes']):
         all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
                                                                      lbl_train[i], debug=debug)
-        predicted_labels = neural_nets['net_24']['neural_net'].predict(all_images[:, :, :, 1::4, 1::4])
+        predicted_labels = neural_nets['net_12']['neural_net'].predict(all_images[:, :, :, 1::4, 1::4])
         images = all_images[predicted_labels == 1]
         labels = all_labels[predicted_labels == 1]
         neural_nets['net_24']['neural_net'].learning(dataset=convert48to24(images), labels=labels, debug_print=debug,
