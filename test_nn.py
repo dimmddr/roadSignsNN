@@ -196,16 +196,16 @@ def test_neural_net(neural_nets_params, debug=False):
                             debug=debug)
 
     nn_params = []
-    for i, net in enumerate(neural_nets):
+    for net_name, net in neural_nets.items():
         # hack
-        if i >= 3: break
-        name = 'weights\lvl_{lvl_number}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
+        if 'calibr' in net_name: break
+        name = 'weights_name_{name}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
                '_image_learn_with_{filters_sizes}_filters_size'.format(
-            lvl_number=i,
-            batch_size=batch_sizes[i - 1],
-            filters_count=filters[i - 1][0],
-            image_counts=indexes[0],
-            filters_sizes=filters[0][1]
+            name=net_name,
+            batch_size=net['batch_size'],
+            filters_count=net['filters'][0],
+            image_counts=net['indexes'],
+            filters_sizes=net['filters'][1]
         )
         nn_params.append(name)
         net.save_params(name)
