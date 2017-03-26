@@ -70,7 +70,7 @@ def nn_init(neural_nets_params, learning_rate=0.1):
     return neural_nets
 
 
-def learning(train_set, dataset_path, lbl_train, neural_nets, debug=False):
+def learning_localization_networks(train_set, dataset_path, lbl_train, neural_nets, debug=False):
     if debug:
         print("First network learning")
     for i in range(0, neural_nets['net_12']['indexes']):
@@ -118,3 +118,7 @@ def learning(train_set, dataset_path, lbl_train, neural_nets, debug=False):
         images = images[predicted_labels_2 == 1]
         labels = all_labels[predicted_labels_1 == 1][predicted_labels_2 == 1]
         neural_nets['net_48']['neural_net'].learning(dataset=images, labels=labels, debug_print=debug, n_epochs=10)
+
+
+def learning_scale_network():
+    pass

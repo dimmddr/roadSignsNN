@@ -189,11 +189,11 @@ def test_neural_net(neural_nets_params, debug=False):
     train_set = train_set[:(neural_nets_params['net_12']['indexes'] + neural_nets_params['net_48']['indexes'])]
     lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
-    neural_cascade.learning(train_set=train_set,
-                            dataset_path=DATASET_PATH,
-                            lbl_train=lbl_train,
-                            neural_nets=neural_nets,
-                            debug=debug)
+    neural_cascade.learning_localization_networks(train_set=train_set,
+                                                  dataset_path=DATASET_PATH,
+                                                  lbl_train=lbl_train,
+                                                  neural_nets=neural_nets,
+                                                  debug=debug)
 
     nn_params = []
     for net_name, net in neural_nets.items():
