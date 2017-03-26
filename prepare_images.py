@@ -51,7 +51,7 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
     lbl_array = np.zeros(shape=(result_array.shape[0], result_array.shape[1]))
     index = 0
 
-    coords = dict()
+    coords = np.empty(lbl_array)
     for i in range(lbl_array.shape[0]):
         for ii in range(lbl_array.shape[1]):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
@@ -62,7 +62,7 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
             is_cover = int(np.any(cover > COVER_PERCENT))
 
             lbl_array[i, ii] = is_cover
-            coords[index] = window
+            coords[i, ii] = window
             index += 1
     return result_array, lbl_array, coords
 
