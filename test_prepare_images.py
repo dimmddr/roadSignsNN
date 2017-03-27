@@ -29,7 +29,7 @@ class TestPrepareImages(TestCase):
         images.sort()
         lbl = np.array([files.get(key).get_coordinates() for key in images])
         print(images[0].decode('utf8'))
-        imgs, lbls, coords = prepare_images.prepare(dataset_path + images[0].decode('utf8'), lbl[0])
+        imgs, lbls = prepare_images.prepare(dataset_path + images[0].decode('utf8'), lbl[0])
         test_img = cv2.imread(dataset_path + images[0].decode('utf8'), cv2.IMREAD_UNCHANGED)
         # noinspection PyAugmentAssignment
         test_img = test_img / 255

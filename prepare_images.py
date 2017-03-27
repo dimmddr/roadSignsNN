@@ -51,7 +51,6 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
     lbl_array = np.zeros(shape=(result_array.shape[0], result_array.shape[1]))
     index = 0
 
-    coords = np.empty(lbl_array)
     for i in range(lbl_array.shape[0]):
         for ii in range(lbl_array.shape[1]):
             # Rectangle = namedtuple('Rectangle', ['xmin', 'ymin', 'xmax', 'ymax'])
@@ -62,9 +61,8 @@ def split_into_subimgs(img, labels, sub_img_shape, debug, step=1):
             is_cover = int(np.any(cover > COVER_PERCENT))
 
             lbl_array[i, ii] = is_cover
-            coords[i, ii] = window
             index += 1
-    return result_array, lbl_array, coords
+    return result_array, lbl_array
 
 
 def prepare(img_path, labels, debug=False):
@@ -77,10 +75,10 @@ def prepare(img_path, labels, debug=False):
     res_img = img / 255
     res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
 
-    res, lbl_res, coords = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-                                              labels=labels, step=step, debug=debug)
+    res, lbl_res = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+                                      labels=labels, step=step, debug=debug)
 
-    return res, lbl_res, coords
+    return res, lbl_res
 
 
 def prepare_calibration(img_path, labels, debug=False):
@@ -97,14 +95,14 @@ def prepare_calibration(img_path, labels, debug=False):
     res_img = img / 255
     res_img = np.array([res_img[:, :, 0], res_img[:, :, 1], res_img[:, :, 2]])
 
-    res, lbl_res, coords = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
-                                              labels=labels, step=step, debug=debug)
+    res, lbl_res = split_into_subimgs(res_img, sub_img_shape=(SUB_IMG_LAYERS, SUB_IMG_HEIGHT, SUB_IMG_WIDTH),
+                                      labels=labels, step=step, debug=debug)
     res = res[lbl_res == 1]
     tmp = np.arange(lbl_res.shape[0] * lbl_res.shape[1]).reshape(lbl_res.shape)
     tmp = tmp[lbl_res == 1]
     # rects = [coords.get(key, None) for key in tmp]
 
-    return res, lbl_res, coords
+    return res, lbl_res
 
 
 def show_sign(img_path, lbl):

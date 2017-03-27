@@ -108,7 +108,7 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
     tn_percent_all = np.zeros(numbers_of_test_imgs)
 
     for i in range(test_img.shape[0]):
-        imgs, lbls, coords = prepare_images.prepare(DATASET_PATH + test_img[i].decode('utf8'), lbl_test[i])
+        imgs, lbls = prepare_images.prepare(DATASET_PATH + test_img[i].decode('utf8'), lbl_test[i])
         y_pred = np.zeros_like(lbls)
         for j in range(imgs.shape[0]):
             # TODO добавить nms в цепочку
