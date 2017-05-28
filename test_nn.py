@@ -90,11 +90,8 @@ def write_results(result: list, test_name):
 
 # Can test only first n nets, cannot test something from the middle without first ones
 # Hardcode for test 3 neural nets
-def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negatives, numbers_of_test_imgs=10):
-    neural_nets[0].load_params(nn_params[0])
-
-    if nn_for_test[1]:
-        neural_nets[1].load_params(nn_params[1])
+def testing_results(neural_nets, nn_params, test_set_without_negatives, numbers_of_test_imgs=10):
+    # neural_nets[0].load_params(nn_params[0])
 
     print("Testing...")
     test_img = np.array(list(test_set_without_negatives.keys())[:numbers_of_test_imgs])
@@ -113,12 +110,12 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
         for j in range(imgs.shape[0]):
             # TODO добавить nms в цепочку
             y_pred[j] = neural_nets[0].predict(nn.convert48to12(imgs[j]))
-        if nn_for_test[1]:
-            tmp = imgs[y_pred == 1]
-            y_pred[y_pred == 1] = neural_nets[1].predict(nn.convert48to24(tmp))
-        if nn_for_test[2]:
-            tmp = imgs[y_pred == 1]
-            y_pred[y_pred == 1] = neural_nets[2].predict(tmp)
+        # if nn_for_test[1]:
+        #     tmp = imgs[y_pred == 1]
+        #     y_pred[y_pred == 1] = neural_nets[1].predict(nn.convert48to24(tmp))
+        # if nn_for_test[2]:
+        #     tmp = imgs[y_pred == 1]
+        #     y_pred[y_pred == 1] = neural_nets[2].predict(tmp)
 
         tmp = lbls - y_pred
 
@@ -139,8 +136,8 @@ def testing_results(neural_nets, nn_params, nn_for_test, test_set_without_negati
         print("True negative percent from all negatives = {}".format(tn_percent))
         tmp = np.arange(lbls.shape[0] * lbls.shape[1]).reshape(lbls.shape)
         tmp = tmp[y_pred == 1]
-        rects = [coords.get(key, None) for key in tmp]
-        prepare_images.save_img_with_rectangles(DATASET_PATH, test_img[i].decode('utf8'), rects)
+        # rects = [coords.get(key, None) for key in tmp]
+        # prepare_images.save_img_with_rectangles(DATASET_PATH, test_img[i].decode('utf8'), rects)
         # prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects, show_type='opencv')
         # rects = prepare_images.nms(rects, 0.3)
         # prepare_images.show_rectangles(dataset_path + test_img[i].decode('utf8'), rects, show_type='opencv')
@@ -185,7 +182,6 @@ def test_neural_net(neural_nets_params, debug=False):
     neural_nets = neural_cascade.nn_init(neural_nets_params, learning_rate=0.01)
     train_set = np.array(list(train_set_without_negatives.keys()))
     train_set.sort()
-    # TODO: remove magic numbers
     train_set = train_set[:(neural_nets_params['net_12']['indexes'] + neural_nets_params['net_48']['indexes'])]
     lbl_train = np.array([train_set_without_negatives.get(key).get_coordinates() for key in train_set])
 
@@ -198,7 +194,7 @@ def test_neural_net(neural_nets_params, debug=False):
     nn_params = []
     for net_name, net in neural_nets.items():
         # hack
-        if 'calibr' in net_name: break
+        if net_name != 'net_12': continue
         name = 'weights_name_{name}_test_batch_size_{batch_size}_filter_numbers_{filters_count}_on_{image_counts}' \
                '_image_learn_with_{filters_sizes}_filters_size'.format(
             name=net_name,
@@ -208,9 +204,10 @@ def test_neural_net(neural_nets_params, debug=False):
             filters_sizes=net['filters'][1]
         )
         nn_params.append(name)
-        net.save_params(name)
+        net['neural_net'].save_params(name)
 
-    testing_results(neural_nets, tuple(nn_params), neural_nets, test_set_without_negatives=train_sets['test_set'])
+    testing_results([neural_nets['net_12']['neural_net']], nn_params=tuple(nn_params),
+                    test_set_without_negatives=train_sets['test_set'])
 
 
 def test_load_params(batch_size=45, random_state=123, init=False):

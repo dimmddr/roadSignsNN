@@ -76,8 +76,8 @@ def learning_localization_networks(train_set, dataset_path, lbl_train, neural_ne
     for i in range(0, neural_nets['net_12']['indexes']):
         if debug:
             print(i)
-        all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                                     lbl_train[i], debug=debug)
+        all_images, all_labels = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+                                                        lbl_train[i], debug=debug)
         if debug:
             print("Image prepared")
         images = all_images[all_labels == 1]
@@ -96,28 +96,28 @@ def learning_localization_networks(train_set, dataset_path, lbl_train, neural_ne
             neural_nets['net_12']['neural_net'].learning(dataset=convert48to12(images), labels=labels,
                                                          debug_print=debug, n_epochs=5)
 
-    if debug:
-        print("Second network learning")
-    for i in range(neural_nets['net_24']['indexes']):
-        all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                                     lbl_train[i], debug=debug)
-        predicted_labels = neural_nets['net_12']['neural_net'].predict(all_images[:, :, :, 1::4, 1::4])
-        images = all_images[predicted_labels == 1]
-        labels = all_labels[predicted_labels == 1]
-        neural_nets['net_24']['neural_net'].learning(dataset=convert48to24(images), labels=labels, debug_print=debug,
-                                                     n_epochs=10)
-
-    if debug:
-        print("Second network learning")
-    for i in range(neural_nets['net_48']['indexes']):
-        all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
-                                                                     lbl_train[i], debug=debug)
-        predicted_labels_1 = neural_nets['net_12']['neural_net'].predict(all_images[:, :, :, 1::4, 1::4])
-        images = all_images[predicted_labels_1 == 1]
-        predicted_labels_2 = neural_nets['net_24']['neural_net'].predict(images[:, :, 1::2, 1::2])
-        images = images[predicted_labels_2 == 1]
-        labels = all_labels[predicted_labels_1 == 1][predicted_labels_2 == 1]
-        neural_nets['net_48']['neural_net'].learning(dataset=images, labels=labels, debug_print=debug, n_epochs=10)
+            # if debug:
+            #     print("Second network learning")
+            # for i in range(neural_nets['net_24']['indexes']):
+            #     all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+            #                                                                  lbl_train[i], debug=debug)
+            #     predicted_labels = neural_nets['net_12']['neural_net'].predict(all_images[:, :, :, 1::4, 1::4])
+            #     images = all_images[predicted_labels == 1]
+            #     labels = all_labels[predicted_labels == 1]
+            #     neural_nets['net_24']['neural_net'].learning(dataset=convert48to24(images), labels=labels, debug_print=debug,
+            #                                                  n_epochs=10)
+            #
+            # if debug:
+            #     print("Second network learning")
+            # for i in range(neural_nets['net_48']['indexes']):
+            #     all_images, all_labels, coordinates = prepare_images.prepare(dataset_path + train_set[i].decode('utf8'),
+            #                                                                  lbl_train[i], debug=debug)
+            #     predicted_labels_1 = neural_nets['net_12']['neural_net'].predict(all_images[:, :, :, 1::4, 1::4])
+            #     images = all_images[predicted_labels_1 == 1]
+            #     predicted_labels_2 = neural_nets['net_24']['neural_net'].predict(images[:, :, 1::2, 1::2])
+            #     images = images[predicted_labels_2 == 1]
+            #     labels = all_labels[predicted_labels_1 == 1][predicted_labels_2 == 1]
+            #     neural_nets['net_48']['neural_net'].learning(dataset=images, labels=labels, debug_print=debug, n_epochs=10)
 
 
 def learning_scale_network():

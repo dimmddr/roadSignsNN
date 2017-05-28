@@ -22,7 +22,7 @@ def test_all():
     neural_nets_params = {
         'net_12': {
             'name': 'First location net',
-            'indexes': 1,
+            'indexes': 100,
             'batch_size': 5,
             'filters': [15, (3, 3)],
             'sizes': (settings.sub_image['layers'], settings.sub_image['height'] // 4, settings.sub_image['width'] // 4)
